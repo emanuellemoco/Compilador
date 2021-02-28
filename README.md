@@ -1,7 +1,7 @@
 ## Para utilizar a calculadora bastar rodar:
 
 ```
-$ python main.py 'expressão'
+$ python main.py 'expressão' 
 ```
 Sendo 'expressão', a expressão que deseja calcular. 
 

@@ -2,7 +2,7 @@ import sys
 import string
 
 expression = " ".join(sys.argv[1:])
-# print("Expression: {}".format(expression))
+# print("Expression: {}".format(expression)) 
 
 end = len(expression)
 result = 0
@@ -37,7 +37,6 @@ for i in reversed(range(len(expression))):
             result -= number
         end = i
     
-
 #Para pegar o primeiro valor:
 i=0
 for i in range(len(expression)):
