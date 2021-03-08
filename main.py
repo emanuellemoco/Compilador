@@ -1,57 +1,97 @@
 import sys 
 import string
+import time
 
-expression = " ".join(sys.argv[1:])
-# print("Expression: {}".format(expression)) 
+class Token:
+    def __init__(self, tipo: str, value: int): 
+        self.tipo = tipo
+        self.value = value
 
-end = len(expression)
-result = 0
-number = 0
-i=0
-
-isNum = False
-isSpace = False
-
-for i in reversed(range(len(expression))):
-
-    #Caso ocorra espaços entre números
-    if isNum and isSpace:
-        if expression[i].isnumeric():
-            raise KeyError
-
-    if not isNum:
-        isNum = expression[i].isnumeric()
-
-    if expression[i] == " " and isNum:
-        isSpace = True
-    
-    if expression[i] == "+" or expression[i] == "-":
-        if not isNum:
-            raise KeyError
-        isSpace = False
+class Tokenizer:
+    def __init__(self, origin: str): # , position: int, actual : Token
+        self.origin = origin     #codigo fonte que sera tokenizado
+        self.position = 0       #posicao atual que o Tokenizador esta separando
+        self.actual = Token(tipo = "", value=None)   #None  #ultimo token separado
+         
+    def selectNext(self):
         isNum = False
-        number = int((expression[i+1:end]))
-        if expression[i] == "+":
-            result += number
-        if expression[i] == "-":
-            result -= number
-        end = i
+        isSpace = False
+        number = ""
+
+        if self.position == (len(self.origin)):
+                token = Token("EOF", "")
+                self.actual = token
+                return
+        atual = self.origin[self.position]
+
+        if atual.isnumeric():
+            while self.position < (len(self.origin)) and (self.origin[self.position]).isnumeric():
+                number += self.origin[self.position]
+                self.position +=1
+            token = Token("INT", int(number))
+            self.actual = token
+            
+        elif atual == "+":
+            token = Token("PLUS", atual)
+            self.actual = token
+            self.position += 1
+        elif atual == "-":
+            token = Token("MINUS", atual)
+            self.actual = token
+            self.position += 1
+        elif atual == " ":
+            self.position += 1
+            self.selectNext()
+        else: 
+            token = Token("invalido", atual)
+            self.actual = token
+            self.position += 1
+            raise KeyError
+               
+        # print("tipo: {}, valor: {}".format(self.actual.tipo, self.actual.value))
+        return    
+        
+
+class Parser():
     
-#Para pegar o primeiro valor:
-i=0
-for i in range(len(expression)):
-    # print (expression[i])
-    if expression[0] == "+" or expression[0] == "-":
-        raise KeyError
+    def __init__(self):
+        pass
 
-    if expression[0] != "+" and expression[0] != "-":
-        if expression[i] == "+" or expression[i] == "-":
-            result += int(expression[0:i])
-            break
+    def parseExpression(self):
+        resultado = 0
+        while (self.tokens.actual.tipo != "EOF"):
+            self.tokens.selectNext()
+            if self.tokens.actual.tipo == "INT":
+                resultado = self.tokens.actual.value 
+                self.tokens.selectNext()
+                if self.tokens.actual.tipo == "INT":
+                    raise KeyError
+                while(self.tokens.actual.tipo == "PLUS" or self.tokens.actual.tipo == "MINUS" or self.tokens.actual.tipo == "INT" ):
+                    if self.tokens.actual.tipo == "INT":
+                        raise KeyError
+                    if self.tokens.actual.tipo == "PLUS":
+                        self.tokens.selectNext()
+                        if self.tokens.actual.tipo == "INT":
+                            resultado += self.tokens.actual.value
+                        else:
+                            raise KeyError
+                    if self.tokens.actual.tipo == "MINUS":
+                        self.tokens.selectNext()
+                        if self.tokens.actual.tipo == "INT":
+                            resultado -= self.tokens.actual.value
+                        else:
+                            raise KeyError
+                    self.tokens.selectNext()
+                print(resultado)
+                return resultado
+            else:
+                raise KeyError
+  
+    def run(self, code: str):
+        self.tokens = Tokenizer(code)
+        self.parseExpression()
 
-print("Result: {}".format(result))
-
-
-
-
+if __name__ == '__main__':
+    compilador = Parser()
+    compilador.run(sys.argv[1])
 
