@@ -14,3 +14,8 @@ $ python main.py '3+5-1'
 ```
 $ python main.py '7   + 2      - 1 '
 ```
+
+#### Diagrama Sintático
+
+[![Diagrama](https://i.imgur.com/8e2Cab1.png)]()
+
