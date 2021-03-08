@@ -22,25 +22,15 @@ class Tokenizer:
                 token = Token("EOF", "")
                 self.actual = token
                 return
-
         atual = self.origin[self.position]
-        # print("posicao inicial: ", self.position)
 
         if atual.isnumeric():
-            # print("=> ", self.origin[self.position])
             while self.position < (len(self.origin)) and (self.origin[self.position]).isnumeric():
                 number += self.origin[self.position]
                 self.position +=1
-            
-            # print("NUMBER: ", number)
             token = Token("INT", int(number))
             self.actual = token
-
-            # print("posicao: ", self.position)
             
-
-        # if atual.isnumeric():
-        #     token = Token("INT", atual)
         elif atual == "+":
             token = Token("PLUS", atual)
             self.actual = token
@@ -64,9 +54,7 @@ class Tokenizer:
 
 class Parser():
     
-    #def __init__(self, tokens : Tokenizer):
     def __init__(self):
-        # self.tokens = tokens
         pass
 
     def parseExpression(self):
@@ -102,7 +90,6 @@ class Parser():
     def run(self, code: str):
         self.tokens = Tokenizer(code)
         self.parseExpression()
-
 
 if __name__ == '__main__':
     compilador = Parser()
