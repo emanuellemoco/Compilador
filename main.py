@@ -116,9 +116,13 @@ class Parser():
         #pegar o numero
         self.tokens.selectNext()
         # print("TIPO_A: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+
+        if self.tokens.actual.tipo != "INT":
+            raise KeyError
+             
         numero = self.tokens.actual.value  #4
         self.tokens.selectNext()
-        
+       
         
         
 
@@ -135,7 +139,6 @@ class Parser():
 
             elif (tipo == "TIMES"):
                 return numero * atual
-
 
         return numero
        
@@ -161,8 +164,8 @@ class Parser():
                         resultado *= a
 
                     if tipo== "DIVIDE":
-                        resultado -= a
-                
+                        resultado /= a
+
                 while(self.tokens.actual.tipo == "PLUS" or self.tokens.actual.tipo == "MINUS"  ):
                     tipo = self.tokens.actual.tipo
                     a = self.term()
@@ -177,7 +180,7 @@ class Parser():
                     except:
                         raise KeyError
                                         
-                print("FIM: ",resultado)
+                print(int(resultado))
                 return resultado
             else:
                 raise KeyError
