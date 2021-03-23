@@ -47,6 +47,14 @@ class Tokenizer:
             token = Token("TIMES", atual)
             self.actual = token
             self.position += 1
+        elif atual == "(":
+            token = Token("ABRE", atual)
+            self.actual = token
+            self.position += 1
+        elif atual == ")":
+            token = Token("FECHA", atual)
+            self.actual = token
+            self.position += 1
         elif atual == " ":
             self.position += 1
             self.selectNext()
@@ -55,7 +63,6 @@ class Tokenizer:
             # self.actual = token
             # self.position += 1
             raise KeyError
-               
         return    
 
 class PrePro():
@@ -108,89 +115,84 @@ class Parser():
     
     def __init__(self):
         pass
+        self.qtd = 0
+
+    def factor(self):
+
+        expressao = 0
+        # print("TIPO: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+        qtd = 0
+        if (self.tokens.actual.tipo == "INT" ):
+            expressao = self.tokens.actual.value
+            self.tokens.selectNext()
+        elif (self.tokens.actual.tipo == "PLUS" ):
+           self.tokens.selectNext()
+           expressao += self.factor()
+        elif (self.tokens.actual.tipo == "MINUS" ):
+           self.tokens.selectNext()
+           expressao -= self.factor()
+        elif (self.tokens.actual.tipo == "ABRE" ):
+            self.qtd +=1
+            self.tokens.selectNext()
+            expressao += self.parseExpression()
+            if (self.tokens.actual.tipo != "FECHA" ):
+                
+                raise KeyError
+            else:
+                qtd -=1
+                self.tokens.selectNext()
+        else:
+            raise KeyError
+ 
+
+        return expressao
+        
 
     def term(self):
-        ###checar se o proximo token é DIVIDE ou TIMES
-       
-       
-        #pegar o numero
-        self.tokens.selectNext()
-        # print("TIPO_A: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+        resultado = self.factor()
 
-        if self.tokens.actual.tipo != "INT":
-            raise KeyError
-             
-        numero = self.tokens.actual.value  #4
-        self.tokens.selectNext()
-       
-        
-        
+        if (self.tokens.actual.tipo == "FECHA"):
+            self.qtd -=1
 
-        #verifica se é DIVIDE ou TIMES, se nao for, volta 
-        while (self.tokens.actual.tipo == "DIVIDE" or self.tokens.actual.tipo == "TIMES"):
-            tipo = self.tokens.actual.tipo 
-            self.tokens.selectNext()    
-            atual = self.tokens.actual.value 
-
-
-            #aqui faz divisao e bota em resultado
-            if (tipo == "DIVIDE"):
-                return numero / atual 
-
-            elif (tipo == "TIMES"):
-                return numero * atual
-
-        return numero
-       
-    
-    def parseExpression(self):
-        resultado = 0
-        tipo = ""
-        while (self.tokens.actual.tipo != "EOF"):
-            self.tokens.selectNext()
-            if self.tokens.actual.tipo == "INT":
-                resultado = self.tokens.actual.value
+        while(self.tokens.actual.tipo == "TIMES" or self.tokens.actual.tipo == "DIVIDE"  ):
+            
+            tipo = self.tokens.actual.tipo
+            if tipo == "TIMES":
                 self.tokens.selectNext()
-
-                #se for int int -> erro
-                if self.tokens.actual.tipo == "INT":
-                    raise KeyError
-                
-                #para tratar quando o primeiro caso é divisao ou vezes
-                if (self.tokens.actual.tipo == "TIMES" or self.tokens.actual.tipo == "DIVIDE" ):
-                    tipo = self.tokens.actual.tipo
-                    a = self.term()
-                    if tipo== "TIMES":
-                        resultado *= a
-
-                    if tipo== "DIVIDE":
-                        resultado /= a
-
-                while(self.tokens.actual.tipo == "PLUS" or self.tokens.actual.tipo == "MINUS"  ):
-                    tipo = self.tokens.actual.tipo
-                    a = self.term()
-      
-                    try:
-                        if tipo== "PLUS":
-                            resultado += a
-                        
-
-                        if tipo== "MINUS":
-                            resultado -= a
-                    except:
-                        raise KeyError
-                                        
-                print(int(resultado))
-                return resultado
+                resultado *= self.factor()
+            elif tipo == "DIVIDE":
+                self.tokens.selectNext()
+                resultado /= self.factor()
             else:
                 raise KeyError
-  
+        return resultado
+    
+    def parseExpression(self):
+        resultado = self.term()
+        tipo = ""
+
+        while(self.tokens.actual.tipo == "PLUS" or self.tokens.actual.tipo == "MINUS"  ):
+            tipo = self.tokens.actual.tipo
+            if tipo == "PLUS":
+                self.tokens.selectNext()
+                resultado += self.term()
+            elif tipo == "MINUS":
+                self.tokens.selectNext()
+                resultado -= self.term()
+            else:
+                raise KeyError
+        return resultado
+
     def run(self, code: str):
         preProce = PrePro(code)
         code = preProce.filter()
 
         self.tokens = Tokenizer(code)
-        self.parseExpression()
+        self.tokens.selectNext()
+        resultado = (int(self.parseExpression()))
+        if (self.qtd != 0):
+            raise KeyError
+        print(resultado)
 
 if __name__ == '__main__':
     compilador = Parser()

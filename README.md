@@ -1,16 +1,13 @@
 #### Diagrama Sintático
 
-[![Diagrama](https://i.imgur.com/XDpF1CY.png)]()
+[![Diagrama](https://i.imgur.com/B3uIJgp.png)]()
 
 
 #### EBNF
 
-EXPRESSION = NUMBER, {("+" | "-" | "*" | "/"), NUMBER} ;
+EXPRESSION = NUMBER, {("+" | "-" | "*" | "/" | "(") | ")", NUMBER} ;
 
 Sendo NUMBER qualquer número, ou seja:
-
-EXPRESSION = 0 | 1 | ... | 9 , {("+" | "-" | "*" | "/"), 0 | 1 | ... | 9 } ;
-
 
 
 
