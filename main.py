@@ -179,13 +179,6 @@ class Parser():
         resultado = self.term()
         tipo = ""
         
-        # print("TIPO_e: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-
-        # if (self.tokens.actual.tipo == "FECHA"):
-        #     self.qtd -=1
-        #     print("qtd_f_e: ", self.qtd)
-
-
         while(self.tokens.actual.tipo == "PLUS" or self.tokens.actual.tipo == "MINUS"  ):
             tipo = self.tokens.actual.tipo
             if tipo == "PLUS":
