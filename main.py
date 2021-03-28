@@ -76,7 +76,6 @@ class PrePro():
 
     def filter(self):        
         atual = self.originPP[self.positionPP]
-        proximoF = self.originPP[self.positionPP +1]
         tamanho = self.originPP 
 
         filtered = "" #nova string filtrada
@@ -120,6 +119,7 @@ class Parser():
     def factor(self):
 
         expressao = 0
+        
         # print("TIPO: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
         qtd = 0
         if (self.tokens.actual.tipo == "INT" ):
@@ -131,15 +131,14 @@ class Parser():
         elif (self.tokens.actual.tipo == "MINUS" ):
            self.tokens.selectNext()
            expressao -= self.factor()
+
         elif (self.tokens.actual.tipo == "ABRE" ):
             self.qtd +=1
             self.tokens.selectNext()
             expressao += self.parseExpression()
             if (self.tokens.actual.tipo != "FECHA" ):
-                
                 raise KeyError
             else:
-                qtd -=1
                 self.tokens.selectNext()
         else:
             raise KeyError
@@ -153,6 +152,10 @@ class Parser():
 
         if (self.tokens.actual.tipo == "FECHA"):
             self.qtd -=1
+
+        #int com int da erro
+        if (self.tokens.actual.tipo == "INT"):
+            raise KeyError
 
         while(self.tokens.actual.tipo == "TIMES" or self.tokens.actual.tipo == "DIVIDE"  ):
             
@@ -170,6 +173,10 @@ class Parser():
     def parseExpression(self):
         resultado = self.term()
         tipo = ""
+        
+
+        if (self.tokens.actual.tipo == "FECHA"):
+            self.qtd -=1
 
         while(self.tokens.actual.tipo == "PLUS" or self.tokens.actual.tipo == "MINUS"  ):
             tipo = self.tokens.actual.tipo
