@@ -1,7 +1,6 @@
 import sys 
 import string
 import time
-
 class Token:
     def __init__(self, tipo: str, value: int): 
         self.tipo = tipo
@@ -12,6 +11,7 @@ class Tokenizer:
         self.origin = origin     #codigo fonte que sera tokenizado
         self.position = 0       #posicao atual que o Tokenizador esta separando
         self.actual = Token(tipo = "", value=None)   #None  #ultimo token separado
+        self.qtd = 0
          
     def selectNext(self):
         isNum = False
@@ -21,6 +21,8 @@ class Tokenizer:
         if self.position == (len(self.origin)):
                 token = Token("EOF", "")
                 self.actual = token
+                if (self.qtd != 0):
+                    raise KeyError
                 return
         atual = self.origin[self.position]
 
@@ -51,10 +53,16 @@ class Tokenizer:
             token = Token("ABRE", atual)
             self.actual = token
             self.position += 1
+            self.qtd +=1
         elif atual == ")":
             token = Token("FECHA", atual)
             self.actual = token
             self.position += 1
+            self.qtd -=1
+            if self.position == (len(self.origin)):
+                if (self.qtd != 0):
+                    raise KeyError
+                
         elif atual == " ":
             self.position += 1
             self.selectNext()
@@ -114,14 +122,12 @@ class Parser():
     
     def __init__(self):
         pass
-        self.qtd = 0
 
     def factor(self):
 
         expressao = 0
         
-        # print("TIPO: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-        qtd = 0
+        # print("TIPO_f: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
         if (self.tokens.actual.tipo == "INT" ):
             expressao = self.tokens.actual.value
             self.tokens.selectNext()
@@ -133,7 +139,9 @@ class Parser():
            expressao -= self.factor()
 
         elif (self.tokens.actual.tipo == "ABRE" ):
-            self.qtd +=1
+            # self.qtd +=1
+            # print("qtd_a: ", self.qtd)
+            
             self.tokens.selectNext()
             expressao += self.parseExpression()
             if (self.tokens.actual.tipo != "FECHA" ):
@@ -150,8 +158,14 @@ class Parser():
     def term(self):
         resultado = self.factor()
 
-        if (self.tokens.actual.tipo == "FECHA"):
-            self.qtd -=1
+        # print("TIPO_t: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+
+
+        # if (self.tokens.actual.tipo == "FECHA"):
+        #     self.qtd -=1
+        #     print("qtd_f_t: ", self.qtd)
+            
+
 
         #int com int da erro
         if (self.tokens.actual.tipo == "INT"):
@@ -174,9 +188,12 @@ class Parser():
         resultado = self.term()
         tipo = ""
         
+        # print("TIPO_e: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
 
-        if (self.tokens.actual.tipo == "FECHA"):
-            self.qtd -=1
+        # if (self.tokens.actual.tipo == "FECHA"):
+        #     self.qtd -=1
+        #     print("qtd_f_e: ", self.qtd)
+
 
         while(self.tokens.actual.tipo == "PLUS" or self.tokens.actual.tipo == "MINUS"  ):
             tipo = self.tokens.actual.tipo
@@ -197,8 +214,8 @@ class Parser():
         self.tokens = Tokenizer(code)
         self.tokens.selectNext()
         resultado = (int(self.parseExpression()))
-        if (self.qtd != 0):
-            raise KeyError
+        # if (self.qtd != 0):
+        #     raise KeyError
         print(resultado)
 
 if __name__ == '__main__':
