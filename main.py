@@ -156,16 +156,7 @@ class Parser():
         
 
     def term(self):
-        resultado = self.factor()
-
-        # print("TIPO_t: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-
-
-        # if (self.tokens.actual.tipo == "FECHA"):
-        #     self.qtd -=1
-        #     print("qtd_f_t: ", self.qtd)
-            
-
+        resultado = self.factor()          
 
         #int com int da erro
         if (self.tokens.actual.tipo == "INT"):
