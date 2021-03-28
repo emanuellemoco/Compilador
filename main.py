@@ -124,9 +124,8 @@ class Parser():
         pass
 
     def factor(self):
-
         expressao = 0
-        
+
         # print("TIPO_f: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
         if (self.tokens.actual.tipo == "INT" ):
             expressao = self.tokens.actual.value
