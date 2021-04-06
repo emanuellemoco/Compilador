@@ -1,6 +1,66 @@
 import sys 
 import string
-import time
+import ast
+from abc import ABC, abstractmethod
+
+class Node(ABC):
+    def __init___(self, value):
+        super().init(value) 
+    
+    @abstractmethod
+    def Evaluate(self):  
+        pass
+
+# Binary Operation
+class BinOp(Node):
+    
+    def __init__(self, value=None):            
+        self.value = value
+        self.children = [None] * 2
+
+    def Evaluate(self):
+        # retorna a operação dos seus dois filhos:
+        left = self.children[0].Evaluate()
+        right = self.children[1].Evaluate()
+        
+        if self.value == "PLUS":
+            return left + right
+        elif self.value == "MINUS":
+            return left - right
+        elif self.value == "TIMES":
+            return left * right
+        elif self.value == "DIVIDE":
+            return int(left / right)   
+    
+# Unary Operation
+class UnOp(Node):
+    def __init__(self, value):            
+        self.value = value
+        self.children = [None] * 2
+
+    def Evaluate(self):
+        # retorna o sinal do numero
+        left = self.children[0].Evaluate()
+        if self.value == "PLUS":
+            return left
+        if self.value == "MINUS":
+            return -left
+        
+
+# Integer value 
+class IntVal(Node):
+    def __init__(self, value=None):        
+        self.value = value
+
+    def Evaluate(self):
+        # retorna o próprio valor inteiro
+        return self.value
+        
+# No Operation (Dummy)
+class NoOp(Node):
+    def Evaluate(self):
+        pass
+
 class Token:
     def __init__(self, tipo: str, value: int): 
         self.tipo = tipo
@@ -67,32 +127,25 @@ class Tokenizer:
             self.position += 1
             self.selectNext()
         else: 
-            # token = Token("invalido", atual)
-            # self.actual = token
-            # self.position += 1
             raise KeyError
         return    
 
 class PrePro():
     
-    def __init__(self, originPP: str): # , position: int, actual : Token
-        self.originPP = originPP     #codigo fonte que sera tokenizado
-        self.positionPP = 0       #posicao atual que o Tokenizador esta separando
+    def __init__(self, originPP: str): 
+        self.originPP = originPP                     #codigo fonte que sera tokenizado
+        self.positionPP = 0                          #posicao atual que o Tokenizador esta separando
         self.actual = Token(tipo = "", value=None)   #None  #ultimo token separado
-
-
 
     def filter(self):        
         atual = self.originPP[self.positionPP]
         tamanho = self.originPP 
-
         filtered = "" #nova string filtrada
 
         #Ideia de como remover comentarios em um unico loop retirada do GeeksforGeeks
         #https://www.geeksforgeeks.org/remove-comments-given-cc-program/
         isComment = False
         isClosed = False
-
 
         while self.positionPP < (len(self.originPP)):    
 
@@ -119,28 +172,29 @@ class PrePro():
        
 
 class Parser():
-    
+
     def __init__(self):
         pass
 
     def factor(self):
-
-        expressao = 0
-        
+              
         # print("TIPO_f: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
         if (self.tokens.actual.tipo == "INT" ):
-            expressao = self.tokens.actual.value
+            arvore = IntVal(self.tokens.actual.value)
             self.tokens.selectNext()
-        elif (self.tokens.actual.tipo == "PLUS" ):
-           self.tokens.selectNext()
-           expressao += self.factor()
-        elif (self.tokens.actual.tipo == "MINUS" ):
-           self.tokens.selectNext()
-           expressao -= self.factor()
+        elif (self.tokens.actual.tipo == "PLUS" ): 
+            arvore = UnOp(value="PLUS")
+            self.tokens.selectNext()
+            arvore.children[0] = self.factor()
 
+        elif (self.tokens.actual.tipo == "MINUS" ):
+            arvore = UnOp(value="MINUS")
+            self.tokens.selectNext()
+            arvore.children[0] = self.factor()
+            
         elif (self.tokens.actual.tipo == "ABRE" ):          
             self.tokens.selectNext()
-            expressao += self.parseExpression()
+            arvore = self.parseExpression()
             if (self.tokens.actual.tipo != "FECHA" ):
                 raise KeyError
             else:
@@ -148,60 +202,76 @@ class Parser():
         else:
             raise KeyError
  
-
-        return expressao
+        return arvore
         
 
     def term(self):
-        resultado = self.factor()          
-
+        arvore = self.factor()          
+    
         #int com int da erro
         if (self.tokens.actual.tipo == "INT"):
             raise KeyError
 
-        while(self.tokens.actual.tipo == "TIMES" or self.tokens.actual.tipo == "DIVIDE"  ):
-            
+        while(self.tokens.actual.tipo == "TIMES" or self.tokens.actual.tipo == "DIVIDE"):
             tipo = self.tokens.actual.tipo
             if tipo == "TIMES":
                 self.tokens.selectNext()
-                resultado *= self.factor()
+                arvore_copy = BinOp("TIMES")
+                arvore_copy.children[0] = arvore
+                arvore_copy.children[1] = self.factor()
+                arvore = arvore_copy
+
             elif tipo == "DIVIDE":
                 self.tokens.selectNext()
-                resultado /= self.factor()
+                arvore_copy = BinOp("DIVIDE")
+                arvore_copy.children[0] = arvore
+                arvore_copy.children[1] = self.factor()
+                arvore = arvore_copy
             else:
                 raise KeyError
-        return resultado
+        return arvore
     
     def parseExpression(self):
-        resultado = self.term()
+
+        arvore = self.term()
         tipo = ""
-        
         while(self.tokens.actual.tipo == "PLUS" or self.tokens.actual.tipo == "MINUS"  ):
             tipo = self.tokens.actual.tipo
             if tipo == "PLUS":
-                self.tokens.selectNext()
-                resultado += self.term()
+                self.tokens.selectNext()               
+                arvore_copy = BinOp("PLUS")
+                arvore_copy.children[0] = arvore
+                arvore_copy.children[1] = self.term()
+                arvore = arvore_copy
+
             elif tipo == "MINUS":
                 self.tokens.selectNext()
-                resultado -= self.term()
+                arvore_copy = BinOp("MINUS")
+                arvore_copy.children[0] = arvore
+                arvore_copy.children[1] = self.term()
+                arvore = arvore_copy
             else:
                 raise KeyError
-        return resultado
+        return arvore
 
     def run(self, code: str):
         preProce = PrePro(code)
         code = preProce.filter()
-
         self.tokens = Tokenizer(code)
         self.tokens.selectNext()
-        resultado = (int(self.parseExpression()))
-        # if (self.qtd != 0):
-        #     raise KeyError
-        print(resultado)
+        resultado = ((self.parseExpression()))
+        print(resultado.Evaluate())
 
 if __name__ == '__main__':
+    f = open(sys.argv[1], "r")
+    expression = f.readline()
     compilador = Parser()
-    compilador.run(sys.argv[1])
+
+    # compilador.run(sys.argv[1]) 
+    compilador.run(expression)
+
+
+
 
 
 
