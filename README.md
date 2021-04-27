@@ -1,43 +1,45 @@
 #### Diagrama Sintático
 
-[![Diagrama](https://i.imgur.com/B3uIJgp.png)]()
+[![Diagrama](https://i.imgur.com/UwtR865.jpeg)]()
 
 
 #### EBNF
 
-EXPRESSION = NUMBER, {("+" | "-" | "*" | "/" | "(") | ")", NUMBER} ;
 
-Sendo NUMBER qualquer número, ou seja:
+BLOCK = { COMMAND } ;
+COMMAND = ( λ | ASSIGNMENT | PRINT), ";" ;
+ASSIGNMENT = IDENTIFIER, "=", EXPRESSION ;
+PRINT = "println", "(", EXPRESSION, ")" ;
+EXPRESSION = TERM, { ("+" | "-"), TERM } ;
+TERM = FACTOR, { ("*" | "/"), FACTOR } ;
+FACTOR = (("+" | "-"), FACTOR) | NUMBER | "(", EXPRESSION, ")" | IDENTIFIER ;
+IDENTIFIER = LETTER, { LETTER | DIGIT | "_" } ;
+NUMBER = DIGIT, { DIGIT } ;
+LETTER = ( a | ... | z | A | ... | Z ) ;
+DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;
+
 
 
 
 ## Para utilizar a calculadora bastar rodar:
 
 ```
-$ python3 main.py 'expressão' 
+$ python3 main.py test1.c 
 ```
-Sendo 'expressão', a expressão que deseja calcular. 
+Sendo 'test1.c', um arquivo .c que contém a expressão que deseja calcular.
 
 ###### Ex 1:
 ```
-$ python3 main.py ' /* a */ 1 /* b */ '
+$ python3 main.py test1.c
 ```
 
-######  Ex 2:
+###### Ex arquivo test1.c:
 ```
-$ python3 main.py ' 3-2 '
+x=5;
+y=10;   
+z=x+y;
+println(z);
 ```
-
-######  Ex 3:
-```
-python3 main.py ' 11+22-33 /* a */ '
-```
-
-######  Ex 3:
-```
-python3 main.py ' 4/2+3 '
-```
-
 
 
 
