@@ -270,7 +270,11 @@ class Parser():
                 return arvore
                 if (self.tokens.actual.tipo == "SEMICOLON"):
                     return NoOp()
+            if self.tokens.actual.tipo == "ABRE":
+                raise KeyError;
+      
                     
+         
 
         # Se token for PRINT EQUAL ABRE EXP FECHA terminando em SEMICOLON   
         elif self.tokens.actual.tipo == "PRINT":
@@ -284,11 +288,15 @@ class Parser():
                 test = Println()
                 test.children[0] = arvore
                 test.Evaluate()
+            
                 
                 if (self.tokens.actual.tipo == "FECHA"):
                     self.tokens.selectNext()
                     if (self.tokens.actual.tipo == "SEMICOLON"):
                         return
+                    else:
+                        raise KeyError
+        
                 
 #______________________________________________________________
     def factor(self):
@@ -330,6 +338,8 @@ class Parser():
     
         #int com int da erro
         if (self.tokens.actual.tipo == "INT"):
+            raise KeyError
+        if (self.tokens.actual.tipo == "IDENTIFIER"):
             raise KeyError
 
         while(self.tokens.actual.tipo == "TIMES" or self.tokens.actual.tipo == "DIVIDE"):
