@@ -1,6 +1,6 @@
 #### Diagrama Sintático
 
-[![Diagrama](https://i.imgur.com/UwtR865.jpeg)]()
+[![Diagrama](https://i.imgur.com/7OCWr2F.jpg)]()
 
 
 #### EBNF
