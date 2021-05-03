@@ -36,12 +36,13 @@ class Node(ABC):
 # ----------------------------------------------------------------
 #faz o getter na symbol table 
 class IdentfOp(Node):
-    def __init__(self, values):
-        self.value = values
+    def __init__(self, value):
+        self.value = value
 
     def Evaluate(self):
         return st.getter(self.value)
 # ----------------------------------------------------------------
+# Le somente inteiros
 class Println(Node):
     def __init__(self):
         self.children = [None] * 2
@@ -49,6 +50,18 @@ class Println(Node):
     def Evaluate(self):
         left = self.children[0].Evaluate()
         print(left)
+# ----------------------------------------------------------------
+class Readln(Node):
+    def __init__(self):
+        self.children = [None] * 2
+
+    def Evaluate(self):
+        value = input()
+        if value.isnumeric():
+            return int(value)
+        else:
+            raise KeyError
+# eval chama o input convertendo para inteiro
 
 # ----------------------------------------------------------------
 # Binary Operation
@@ -113,7 +126,7 @@ class Tokenizer:
         self.origin = origin     #codigo fonte que sera tokenizado
         self.position = 0       #posicao atual que o Tokenizador esta separando
         self.actual = Token(tipo = "", value=None)   #None  #ultimo token separado
-        self.qtd = 0
+        self.qtd = 0            # quantidade de parenteses
          
     def selectNext(self):
         number = ""
@@ -141,15 +154,35 @@ class Tokenizer:
             if expression == "println":
                 token = Token("PRINT", expression)
                 self.actual = token
+
+            elif expression == "readln":
+                token = Token("READ", expression)
+                self.actual = token
+            elif expression == "while":
+                token = Token("WHILE", expression)
+                self.actual = token
+            elif expression == "if":
+                token = Token("IF", expression)
+                self.actual = token
+            elif expression == "else":
+                token = Token("ELSE", expression)
+                self.actual = token
+
             else:
                 token = Token("IDENTIFIER", expression)
                 self.actual = token
         
         
         elif atual == "=":
-            token = Token("EQUAL", atual)
-            self.actual = token
-            self.position += 1
+            self.position +=1
+            if self.origin[self.position] == "=":
+                token = Token("RELATIVE", atual)
+                self.actual = token
+                self.position += 1
+            else:
+                token = Token("EQUAL", atual)
+                self.actual = token
+                # self.position += 1
         
         elif atual == ";":
             token = Token("SEMICOLON", atual) 
@@ -172,20 +205,52 @@ class Tokenizer:
             token = Token("TIMES", atual)
             self.actual = token
             self.position += 1
+
+        elif atual == ">":
+            token = Token("GREATER", atual)
+            self.actual = token
+            self.position += 1
+        elif atual == "<":
+            token = Token("LESS", atual)
+            self.actual = token
+            self.position += 1
+        elif atual == "&":
+            self.position +=1
+            if self.origin[self.position] == "&":
+                token = Token("AND", atual)
+                self.actual = token
+                self.position += 1
+            else:
+                raise KeyError
+        elif atual == "|":
+            self.position +=1
+            if self.origin[self.position] == "|":
+                token = Token("OR", atual)
+                self.actual = token
+                self.position += 1
+            else:
+                raise KeyError
+        elif atual == "!":
+            token = Token("NEG", atual)
+            self.actual = token
+            self.position += 1
+
+
+
+
         elif atual == "(":
-            token = Token("ABRE", atual)
+            token = Token("ABRE_PAR", atual)
             self.actual = token
             self.position += 1
             self.qtd +=1
         elif atual == ")":
-            token = Token("FECHA", atual)
+            token = Token("FECHA_PAR", atual)
             self.actual = token
             self.position += 1
             self.qtd -=1
             if self.position == (len(self.origin)):
                 if (self.qtd != 0):
-                    raise KeyError
-                
+                    raise KeyError                
         elif atual == " ":
             self.position += 1
             self.selectNext()
@@ -193,6 +258,18 @@ class Tokenizer:
         elif atual == "\n":
             self.position += 1
             self.selectNext()
+
+    #TALVEZ TER QUE CHECAR QUANTIDADE DE CHAVES
+        elif atual == "{":
+            token = Token("ABRE_CHA", atual)
+            self.actual = token
+            self.position += 1
+            self.qtd +=1
+        elif atual == "}":
+            token = Token("FECHA_CHA", atual)
+            self.actual = token
+            self.position += 1
+            self.qtd -=1
         else: 
             raise KeyError
         return    
@@ -248,9 +325,13 @@ class Parser():
 # ----------------------------------------------------------------
     # chama command 
     def Block(self):
-        while(self.tokens.actual.tipo != "EOF"):           
-            self.Command()
-            self.tokens.selectNext()
+        
+        if (self.tokens.actual.tipo == "ABRE_CHA"):
+            while(self.tokens.actual.tipo != "FECHA_CHA"):    
+                if (self.tokens.actual.tipo == "EOF"):
+                    raise KeyError    
+                self.Command()
+                self.tokens.selectNext()
 
 # ----------------------------------------------------------------
     def Command(self):
@@ -264,13 +345,13 @@ class Parser():
             if self.tokens.actual.tipo == "EQUAL":
                 self.tokens.selectNext()
                 
-                arvore = (self.parseExpression())
+                arvore = self.orExpression()
                 nos = (arvore.Evaluate())
                 st.setter(variavel, nos)
                 return arvore
                 if (self.tokens.actual.tipo == "SEMICOLON"):
                     return NoOp()
-            if self.tokens.actual.tipo == "ABRE":
+            if self.tokens.actual.tipo == "ABRE_PAR":
                 raise KeyError;
       
                     
@@ -279,10 +360,10 @@ class Parser():
         # Se token for PRINT EQUAL ABRE EXP FECHA terminando em SEMICOLON   
         elif self.tokens.actual.tipo == "PRINT":
             self.tokens.selectNext()
-            if self.tokens.actual.tipo == "ABRE":
+            if self.tokens.actual.tipo == "ABRE_PAR":
                 self.tokens.selectNext()
 
-                arvore = (self.parseExpression())
+                arvore = (self.orExpression())
                 nos = (arvore.Evaluate())
 
                 test = Println()
@@ -290,7 +371,7 @@ class Parser():
                 test.Evaluate()
             
                 
-                if (self.tokens.actual.tipo == "FECHA"):
+                if (self.tokens.actual.tipo == "FECHA_PAR"):
                     self.tokens.selectNext()
                     if (self.tokens.actual.tipo == "SEMICOLON"):
                         return
@@ -298,40 +379,49 @@ class Parser():
                         raise KeyError
         
                 
-#______________________________________________________________
-    def factor(self):
 
-        # print("TIPO_f: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-        if (self.tokens.actual.tipo == "INT" ):
-            arvore = IntVal(self.tokens.actual.value)
-            self.tokens.selectNext()
-        elif (self.tokens.actual.tipo == "PLUS" ): 
-            arvore = UnOp(value="PLUS")
-            self.tokens.selectNext()
-            arvore.children[0] = self.factor()
+#______________________________________________________________    
+    def orExpression(self):
+        arvore = self.andExpression()
+        # while(self.tokens.actual.tipo == "OR"):
 
-        elif (self.tokens.actual.tipo == "MINUS" ):
-            arvore = UnOp(value="MINUS")
-            self.tokens.selectNext()
-            arvore.children[0] = self.factor()
-            
-        elif (self.tokens.actual.tipo == "ABRE" ):          
-            self.tokens.selectNext()
-            arvore = self.parseExpression()
-            if (self.tokens.actual.tipo != "FECHA" ):
-                raise KeyError
-            else:
+#______________________________________________________________ 
+    def andExpression(self):
+        arvore = self.eqExpression()
+
+#______________________________________________________________ 
+    def eqExpression(self):
+        arvore = self.relExpression()
+
+#______________________________________________________________   
+    def relExpression(self):
+        arvore = self.parseExpression()
+    
+
+#______________________________________________________________    
+    def parseExpression(self):
+
+        arvore = self.term()
+        tipo = ""
+        while(self.tokens.actual.tipo == "PLUS" or self.tokens.actual.tipo == "MINUS"  ):
+            tipo = self.tokens.actual.tipo
+            if tipo == "PLUS":
+                self.tokens.selectNext()               
+                arvore_copy = BinOp("PLUS")
+                arvore_copy.children[0] = arvore
+                arvore_copy.children[1] = self.term()
+                arvore = arvore_copy
+
+            elif tipo == "MINUS":
                 self.tokens.selectNext()
-
-        elif (self.tokens.actual.tipo == "IDENTIFIER" ):
-            arvore = IdentfOp(self.tokens.actual.value)
-            valor = arvore.Evaluate()        
-            self.tokens.selectNext()
-        else:
-            raise KeyError
- 
+                arvore_copy = BinOp("MINUS")
+                arvore_copy.children[0] = arvore
+                arvore_copy.children[1] = self.term()
+                arvore = arvore_copy
+            else:
+                raise KeyError
         return arvore
-        
+#______________________________________________________________
 
     def term(self):
         arvore = self.factor()          
@@ -360,29 +450,59 @@ class Parser():
             else:
                 raise KeyError
         return arvore
-    
-    def parseExpression(self):
 
-        arvore = self.term()
-        tipo = ""
-        while(self.tokens.actual.tipo == "PLUS" or self.tokens.actual.tipo == "MINUS"  ):
-            tipo = self.tokens.actual.tipo
-            if tipo == "PLUS":
-                self.tokens.selectNext()               
-                arvore_copy = BinOp("PLUS")
-                arvore_copy.children[0] = arvore
-                arvore_copy.children[1] = self.term()
-                arvore = arvore_copy
+#______________________________________________________________
+    def factor(self):
+        # print("TIPO_f: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+        
+        #number:
+        if (self.tokens.actual.tipo == "INT" ):
+            arvore = IntVal(self.tokens.actual.value)
+            self.tokens.selectNext()
+        elif (self.tokens.actual.tipo == "PLUS" ): 
+            arvore = UnOp(value="PLUS")
+            self.tokens.selectNext()
+            arvore.children[0] = self.factor()
+        elif (self.tokens.actual.tipo == "MINUS" ):
+            arvore = UnOp(value="MINUS")
+            self.tokens.selectNext()
+            arvore.children[0] = self.factor()
 
-            elif tipo == "MINUS":
-                self.tokens.selectNext()
-                arvore_copy = BinOp("MINUS")
-                arvore_copy.children[0] = arvore
-                arvore_copy.children[1] = self.term()
-                arvore = arvore_copy
-            else:
+        elif (self.tokens.actual.tipo == "NEG" ):
+            arvore = UnOp(value="NEG")   ##implementar essa parte
+            self.tokens.selectNext()
+            arvore.children[0] = self.factor() 
+            
+        elif (self.tokens.actual.tipo == "ABRE_PAR" ):          
+            self.tokens.selectNext()
+            arvore = self.orExpression()  ########antes chamava a parseExpression
+            if (self.tokens.actual.tipo != "FECHA_PAR" ):
                 raise KeyError
+            else:
+                self.tokens.selectNext()
+
+        elif (self.tokens.actual.tipo == "IDENTIFIER" ):
+            arvore = IdentfOp(self.tokens.actual.value)
+            valor = arvore.Evaluate()        
+            self.tokens.selectNext()
+  
+        elif self.tokens.actual.tipo == "READ":
+            self.tokens.selectNext()
+            if self.tokens.actual.tipo == "ABRE_PAR":
+                self.tokens.selectNext()
+                if self.tokens.actual.tipo == "FECHA_PAR":
+                    int arvore = Readln()
+                    #guarda o valor na tabela de simbolos
+        
+
+
+
+        else:
+            raise KeyError
+ 
         return arvore
+#______________________________________________________________
+
 
     def run(self, code: str):
         preProce = PrePro(code)
