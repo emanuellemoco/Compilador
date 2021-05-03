@@ -25,13 +25,17 @@ DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;
 ```
 $ python3 main.py test1.c 
 ```
+<<<<<<< HEAD
 Sendo 'test1.c', um arquivo .c que contém a expressão que deseja calcular.
+=======
 
-###### Ex 1:
+
+###### Ex:
 ```
 $ python3 main.py test1.c
 ```
 
+<<<<<<< HEAD
 ###### Ex arquivo test1.c:
 ```
 x=5;
@@ -40,6 +44,11 @@ z=x+y;
 println(z);
 ```
 
+=======
+
+
+
+>>>>>>> 5028d64c6a996d60433399a298e4872eddc91fde
 
 
 

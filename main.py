@@ -60,7 +60,7 @@ class Readln(Node):
         if value.isnumeric():
             return int(value)
         else:
-            raise KeyError
+            raise KeyError 
 # eval chama o input convertendo para inteiro
 
 # ----------------------------------------------------------------
