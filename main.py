@@ -431,7 +431,7 @@ class Parser():
         
         if (self.tokens.actual.tipo == "ABRE_CHA" ):
             self.tokens.selectNext()  
-            while(self.tokens.actual.tipo != "FECHA_CHA"):
+            while(self.tokens.actual.tipo != "FECHA_CHA" and self.tokens.actual.tipo != "EOF"):
                 filho = self.Command()
                 self.tokens.selectNext()    
                 if (filho != None):
@@ -439,7 +439,9 @@ class Parser():
             if (self.tokens.actual.tipo == "FECHA_CHA"):
                 print("block: fecha chaves")
                 self.tokens.selectNext() 
+                print ("============FINAL: ", final)
                 return final
+
 
         else:
             print("TIPO_block: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
@@ -465,10 +467,8 @@ class Parser():
                 arvore_copy = BinOp("ASSIGMENT")
                 arvore_copy.children[0] = variavel
                 arvore_copy.children[1] = arvore
-                # print("TIPO_i1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                 if self.tokens.actual.tipo == "SEMICOLON":
-                    # self.tokens.selectNext()
-                    # print("TIPO_i2: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+                    self.tokens.selectNext()
                     return arvore_copy
                 else:
                     raise ValueError("Nao tem ;")
