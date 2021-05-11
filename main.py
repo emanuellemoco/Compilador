@@ -431,24 +431,26 @@ class Parser():
     # chama command 
     def Block(self):
         final = FinalOp()
-        print("TIPO_block: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
 
+        print("TIPO_block0000: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
 
         if (self.tokens.actual.tipo == "ABRE_CHA" ):
             self.tokens.selectNext()  
             while(self.tokens.actual.tipo != "FECHA_CHA" and self.tokens.actual.tipo != "EOF"):
-                print("TIPO_block1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-
+                print("TIPO_block0: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                 filho = self.Command()
                 self.tokens.selectNext()    
                 if (filho != None):
                     final.children.append(filho)
-            while (self.tokens.actual.tipo == "FECHA_CHA"):
-                self.tokens.selectNext() 
+            if (self.tokens.actual.tipo == "FECHA_CHA"):
+                print("TIPO_block1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+                # self.tokens.selectNext() 
+
                 
             # for child in final.children:
             #     print("****** ",child)
-                    
+            print("TIPO_block3: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+     
             return final
 
 
@@ -465,9 +467,7 @@ class Parser():
         print("TIPO_c1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
   
         if self.tokens.actual.tipo == "SEMICOLON":
-            print("TIPO_semi1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-            # self.tokens.selectNext()
-            print("TIPO_semi2: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+            print("TIPO_semi: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
             return NoOp()
 
         elif self.tokens.actual.tipo == "IDENTIFIER":
