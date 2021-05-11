@@ -241,7 +241,7 @@ class Tokenizer:
                 token = Token("EOF", "")
                 self.actual = token
                 if (self.qtdPar != 0 or self.qtdCha != 0):
-                    raise KeyError
+                    raise ValueError("Chaves ou parenteses desbalanceados")
                 return
         atual = self.origin[self.position]
 
@@ -490,6 +490,7 @@ class Parser():
                     raise ValueError("Nao tem ;")
 
         elif self.tokens.actual.tipo == "PRINT":
+            print("PRINT")
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "ABRE_PAR":
                 self.tokens.selectNext()
@@ -519,7 +520,7 @@ class Parser():
                     test = WhileOp()
                     test.children[0] = arvore
                     test.children[1] = self.Command()
-                    self.tokens.selectNext()
+                    # self.tokens.selectNext()
                     return test
 
 
