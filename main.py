@@ -463,8 +463,7 @@ class Parser():
         # print("TIPO_c1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
   
         if self.tokens.actual.tipo == "SEMICOLON":
-            # print("TIPO_semi: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-            # self.tokens.selectNext()
+            self.tokens.selectNext()
             return NoOp()
 
         elif self.tokens.actual.tipo == "IDENTIFIER":
@@ -474,7 +473,6 @@ class Parser():
             if self.tokens.actual.tipo == "EQUAL":
                 self.tokens.selectNext()
                 arvore = self.orExpression()
-                # print("ARVORE: ",arvore)
                 arvore_copy = BinOp("ASSIGMENT")
                 arvore_copy.children[0] = variavel
                 arvore_copy.children[1] = arvore
