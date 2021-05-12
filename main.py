@@ -753,7 +753,7 @@ class Parser():
         if (self.tokens.actual.tipo != "EOF"):
             raise ValueError("Nao chegou no EOF")
 
-        print("___________EVALUATE______________ ")
+        # print("___________EVALUATE______________ ")
 
         resultado.Evaluate()
 

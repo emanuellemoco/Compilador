@@ -1,19 +1,28 @@
 #### Diagrama Sintático
 
-[![Diagrama](https://i.imgur.com/7OCWr2F.jpg)]()
+[![Diagrama](https://i.imgur.com/jzcI291.png)]()  
+[![Diagrama](https://i.imgur.com/jYCr270.png)]()
 
 
 #### EBNF
 
-BLOCK = { COMMAND } ;  
-COMMAND = ( λ | ASSIGNMENT | PRINT), ";" ;  
-ASSIGNMENT = IDENTIFIER, "=", EXPRESSION ;  
-PRINT = "println", "(", EXPRESSION, ")" ;  
+
+BLOCK = "{", COMMAND, "}" ;   
+COMMAND = ( λ | ASSIGNMENT | PRINT | BLOCK | WHILE | IF ), ";" ;  
+ASSIGNMENT = IDENTIFIER, "=", EXPRESSION ;                                            
+PRINT = "println", "(", (EXPRESSION | NUMERO ), ")" ;                                
+WHILE = "while", "(", EXPRESSION, ")", COMMAND, BLOCK ;  
+IF = "if", "(", EXPRESSION, ")", (COMMAND | COMMAND, "else", COMMAND) ;  
+OREXPR = ANDEXPR, { "||" } ;  
+ANDEXPR = EQEXPR, { "&&" } ;  
+EQEXPR = RELEXPR, { "==" } ;  
+RELEXPR = EXPRESSION, { (">" | "<"), EXPRESSION } ;  
 EXPRESSION = TERM, { ("+" | "-"), TERM } ;  
 TERM = FACTOR, { ("*" | "/"), FACTOR } ;  
-FACTOR = (("+" | "-"), FACTOR) | NUMBER | "(", EXPRESSION, ")" | IDENTIFIER ;  
+FACTOR = (("+" | "-" | "!"), FACTOR) | NUMERO | IDENTIFIER | "(", EXPRESSION, ")" | "readln",  "(", ")" ;  
+READLN = "readln", "(", ")" ;  
 IDENTIFIER = LETTER, { LETTER | DIGIT | "_" } ;  
-NUMBER = DIGIT, { DIGIT } ;  
+NUMERO = DIGIT, { DIGIT } ;  
 LETTER = ( a | ... | z | A | ... | Z ) ;  
 DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;  
 
@@ -38,10 +47,15 @@ $ python3 main.py test1.c
 <<<<<<< HEAD
 ###### Ex arquivo test1.c:
 ```
-x=5;
-y=10;   
-z=x+y;
-println(z);
+{
+    i = 1;
+    n = 4;
+    while(i<n)
+    {
+        i = i + 1;
+    }
+    println(i);   
+}
 ```
 
 =======
