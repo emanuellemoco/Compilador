@@ -1,3 +1,8 @@
+# Status dos testes
+![git status](http://3.129.230.99/svg/emanuellemoco/Compilador/)
+
+
+
 #### Diagrama Sintático
 
 [![Diagrama](https://i.imgur.com/jzcI291.png)]()  
@@ -34,7 +39,8 @@ DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;
 ```
 $ python3 main.py test1.c 
 ```
-<<<<<<< HEAD
+
+=======
 Sendo 'test1.c', um arquivo .c que contém a expressão que deseja calcular.
 =======
 
@@ -44,7 +50,6 @@ Sendo 'test1.c', um arquivo .c que contém a expressão que deseja calcular.
 $ python3 main.py test1.c
 ```
 
-<<<<<<< HEAD
 ###### Ex arquivo test1.c:
 ```
 {
@@ -57,12 +62,6 @@ $ python3 main.py test1.c
     println(i);   
 }
 ```
-
-=======
-
-
-
->>>>>>> 5028d64c6a996d60433399a298e4872eddc91fde
 
 
 
