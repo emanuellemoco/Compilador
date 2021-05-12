@@ -158,7 +158,7 @@ class WhileOp(Node):
         left = self.children[0].Evaluate()      #Condicao
         # right = self.children[1].Evaluate()
 
-        print("A condicao do while é: ",left)
+        # print("A condicao do while é: ",left)
         while (left):
             if (self.children[0].Evaluate()):
                 self.children[1].Evaluate() 
@@ -432,24 +432,24 @@ class Parser():
     def Block(self):
         final = FinalOp()
 
-        print("TIPO_block0000: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+        # print("TIPO_block0000: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
 
         if (self.tokens.actual.tipo == "ABRE_CHA" ):
             self.tokens.selectNext()  
             while(self.tokens.actual.tipo != "FECHA_CHA" and self.tokens.actual.tipo != "EOF"):
-                print("TIPO_block0: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+                # print("TIPO_block0: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                 filho = self.Command()
                 self.tokens.selectNext()    
                 if (filho != None):
                     final.children.append(filho)
-            if (self.tokens.actual.tipo == "FECHA_CHA"):
-                print("TIPO_block1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-                # self.tokens.selectNext() 
+            # if (self.tokens.actual.tipo == "FECHA_CHA"):
+            #     print("TIPO_block1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+            #     # self.tokens.selectNext() 
 
                 
             # for child in final.children:
             #     print("****** ",child)
-            print("TIPO_block3: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+            # print("TIPO_block3: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
      
             return final
 
@@ -464,33 +464,36 @@ class Parser():
 # ----------------------------------------------------------------
     def Command(self):
         variavel = ""
-        print("TIPO_c1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+        # print("TIPO_c1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
   
         if self.tokens.actual.tipo == "SEMICOLON":
-            print("TIPO_semi: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+            # print("TIPO_semi: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+            # self.tokens.selectNext()
             return NoOp()
 
         elif self.tokens.actual.tipo == "IDENTIFIER":
-            print("TIPO_id0: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+            # print("TIPO_id0: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
             variavel = (self.tokens.actual.value)
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "EQUAL":
-                print("TIPO_id1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+                # print("TIPO_id1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                 self.tokens.selectNext()
+                # print("TIPO_id1.1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                 arvore = self.orExpression()
+                # print("ARVORE: ",arvore)
                 arvore_copy = BinOp("ASSIGMENT")
                 arvore_copy.children[0] = variavel
                 arvore_copy.children[1] = arvore
-                print("TIPO_id2: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+                # print("TIPO_id2: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                 if self.tokens.actual.tipo == "SEMICOLON":
+                    NoOp()
                     # self.tokens.selectNext()
-                    print("TIPO_id3: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+                    # print("TIPO_id3: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                     return arvore_copy
                 else:
                     raise ValueError("Nao tem ;")
 
         elif self.tokens.actual.tipo == "PRINT":
-            print("PRINT")
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "ABRE_PAR":
                 self.tokens.selectNext()
@@ -504,9 +507,10 @@ class Parser():
                     raise ValueError("Não fechou parenteses")
                 if (self.tokens.actual.tipo == "SEMICOLON"):
                     # print("------------------------------> retorno da command PRINT: ", test)
+                    # print("TIPO_pr4: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                     return test
                 else:
-                    raise KeyError
+                    raise ValueError("Print sem ; no final")
             
 
         elif self.tokens.actual.tipo == "WHILE":
@@ -525,33 +529,43 @@ class Parser():
 
 
         elif self.tokens.actual.tipo == "IF":
-            print("TIPO_if1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+            # print("TIPO_if1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "ABRE_PAR":
-                print("TIPO_if3: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+                # print("TIPO_if3: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                 self.tokens.selectNext()
                 condicao = (self.orExpression())
-                print("------------------------------> condicao: ",condicao)
-                print("TIPO_if4: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+                # print("------------------------------> condicao: ",condicao)
+                # print("TIPO_if4: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                 if (self.tokens.actual.tipo == "FECHA_PAR"):
-                    print("TIPO_if5: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                     self.tokens.selectNext() 
+                    # print("TIPO_if5: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
 
-                    print("-ANTES------------")
+                    # print("-ANTES------------")
                     to_do = self.Command()
-                    print("------------------------------> to_do: ",to_do)
+                    self.tokens.selectNext() #checar
+                    # print("TIPO_if6: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+
+                    # print("------------------------------> to_do: ",to_do)
                     test = IfOp()
                     test.children[0] = condicao
                     test.children[1] = to_do
-                    # self.tokens.selectNext() #checar
-                    print("TIPO_c5: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+                    ##################
+                    #SE TEM ELSE, NAO PODE ESSE  self.tokens.selectNext() 
+                    # SE NAO TEM ELSE PRECISO DESSE self.tokens.selectNext() 
+                    ###################
+                    self.tokens.selectNext() #checar
+                    # print("TIPO_if7: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                     if (self.tokens.actual.tipo == "ELSE"):
-                        print("ELSEEEEEEEEEE")
+                        # print("ELSEEEEEEEEEE")
                         self.tokens.selectNext() 
+                        # print("TIPO_if8: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                         se_nao = self.Command()
-                        print("SE NAO:   ", se_nao)
+                        # print("TIPO_if9: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+                        # print("SE NAO:   ", se_nao)
                         test.children[2] = se_nao
-                    print("TERMINANDO AQUI: " ,test)
+                    # print("TERMINANDO AQUI: " ,test)
+                    # print("TIPO_if8: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                     return test
                 else:
                     ValueError("Não fechou parenteses do if")
@@ -561,7 +575,7 @@ class Parser():
 
         else:
             #BLOCK
-            print("Entrou no else da command e chama block")
+            # print("Entrou no else da command e chama block")
             arvore = (self.Block())
             return arvore
         
