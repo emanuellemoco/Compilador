@@ -17,14 +17,21 @@ class SymbolTable():
             #retornar o valor
             return symbol_table_dict[variable]
         else:
-            raise ValueError("Variavel nao encontrada")
+            raise ValueError("Variavel nao atribuída")
 
     #por enquanto as variaveis sao unicas, nao havera problema de sobrescrita
     def setter(self, variable, value):
-        # if symbol not in symbol_table_dict:           #NAO SEI SE VAI PRECISAR
+        # if symbol in symbol_table_dict:           #NAO SEI SE VAI PRECISAR
         symbol_table_dict[variable] = value;
+        # else
+        # variavel nao foi definida
 
 st = SymbolTable()
+# ----------------------------------------------------------------
+# Definicao do tipo de variavel na st
+def Symbol_type(variable, type):
+    symbol_table_dict[variable] = [None, type]
+
 # ----------------------------------------------------------------
 class Node(ABC):
     def __init___(self, value):
@@ -43,11 +50,7 @@ class FinalOp():
     def Evaluate(self):
         # print (len(self.children))
         for i in self.children :
-
-            # print("oi")
-            # print("filho:  ->>> ",i)
             i.Evaluate()
-            # print("xau")
 
  # ----------------------------------------------------------------
 #faz o getter na symbol table 
@@ -56,9 +59,7 @@ class IdentfOp(Node):
         self.value = value
 
     def Evaluate(self):
-        # print("getter value: ",self.value)
         return st.getter(self.value)
-# ----------------------------------------------------------------      
 
 # ----------------------------------------------------------------
 # Le somente inteiros
@@ -92,15 +93,14 @@ class BinOp(Node):
         self.children = [None] * 2
 
     def Evaluate(self):
-        # retorna a operação dos seus dois filhos:
 
+        if self.value == "DECLARATION": #ARRUMAR ISSO
+            return st.setter(self.children[0], self.children[1])
+        # retorna a operação dos seus dois filhos:
         right = self.children[1].Evaluate()
 
         if self.value == "ASSIGMENT":
-            # print("--------> ASSIGMENT")
-            # print("entrou aqui, left: {} right: {} ".format(self.children[0],right))
             return st.setter(self.children[0], right)
-            # return
 
 
         left = self.children[0].Evaluate()
@@ -139,6 +139,15 @@ class UnOp(Node):
         self.children = [None] * 2
 
     def Evaluate(self):
+        
+        # if self.value == "DECLARATION":
+        #     # print("--------> ASSIGMENT")
+        #     # print("entrou aqui, left: {} right: {} ".format(self.children[0],right))
+        #     return st.setter(self.children[0], right)
+        #     # return
+
+
+
         # retorna o sinal do numero
         left = self.children[0].Evaluate()
         if self.value == "PLUS":
@@ -215,6 +224,17 @@ class IntVal(Node):
         # retorna o próprio valor inteiro
         return self.value
 # ----------------------------------------------------------------       
+# Booleanvalue 
+class BoolVal(Node):
+    def __init__(self, value=None):        
+        self.value = value
+
+    def Evaluate(self):
+        if (self.value == "true"):
+            return True #############??????
+        if (self.value == "false"):
+            return False
+# ----------------------------------------------------------------  
 # No Operation (Dummy)
 class NoOp(Node):
     def Evaluate(self):
@@ -249,7 +269,7 @@ class Tokenizer:
             while self.position < (len(self.origin)) and (self.origin[self.position]).isnumeric():
                 number += self.origin[self.position]
                 self.position +=1
-            token = Token("INT", int(number))
+            token = Token("NUMBER", int(number))
             self.actual = token
 
 
@@ -260,7 +280,6 @@ class Tokenizer:
             if expression == "println":
                 token = Token("PRINT", expression)
                 self.actual = token
-
             elif expression == "readln":
                 token = Token("READ", expression)
                 self.actual = token
@@ -273,12 +292,34 @@ class Tokenizer:
             elif expression == "else":
                 token = Token("ELSE", expression)
                 self.actual = token
+            elif expression == "int":
+                token = Token("INT_type", expression)
+                self.actual = token
+            elif expression == "bool":
+                token = Token("BOOL_type", expression)
+                self.actual = token
+            elif expression == "string":
+                token = Token("STRING_type", expression)
+                self.actual = token
 
             else:
                 token = Token("IDENTIFIER", expression)
                 self.actual = token
         
-        
+        elif atual ==  '"'  :
+            # expression += self.origin[self.position]  # SE PRECISAR DAS ASPAS
+            self.position +=1
+            while self.position < (len(self.origin)) and  self.origin[self.position] !='"' :
+                expression += self.origin[self.position]
+                
+                self.position +=1
+            # expression += self.origin[self.position] # SE PRECISAR DAS ASPAS
+            self.position +=1
+            token = Token("STRING", expression)
+            self.actual = token
+
+
+
         elif atual == "=":
             self.position +=1
             if self.origin[self.position] == "=":
@@ -363,7 +404,6 @@ class Tokenizer:
             self.position += 1
             self.selectNext()
 
-    #TALVEZ TER QUE CHECAR QUANTIDADE DE CHAVES
         elif atual == "{":
             token = Token("ABRE_CHA", atual)
             self.actual = token
@@ -433,23 +473,15 @@ class Parser():
     def Block(self):
         final = FinalOp()
 
-
         if (self.tokens.actual.tipo == "ABRE_CHA" ):
             self.tokens.selectNext()  
             while(self.tokens.actual.tipo != "FECHA_CHA" and self.tokens.actual.tipo != "EOF"):
-                # print("TIPO_block0: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                 filho = self.Command()
-                # self.tokens.selectNext()    
                 if (filho != None):
                     final.children.append(filho)
             if (self.tokens.actual.tipo == "FECHA_CHA"):
                 self.tokens.selectNext() 
-
-                
-            # for child in final.children:
-            #     print("****** ",child)
-            # print("TIPO_block3: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-     
+    
             return final
         else:
             print("TIPO_block: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
@@ -460,14 +492,13 @@ class Parser():
 # ----------------------------------------------------------------
     def Command(self):
         variavel = ""
-        # print("TIPO_c1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+        
   
         if self.tokens.actual.tipo == "SEMICOLON":
             self.tokens.selectNext()
             return NoOp()
 
         elif self.tokens.actual.tipo == "IDENTIFIER":
-            # print("TIPO_id0: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
             variavel = (self.tokens.actual.value)
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "EQUAL":
@@ -483,12 +514,28 @@ class Parser():
                 else:
                     raise ValueError("Nao tem ;")
 
+
+        elif self.tokens.actual.tipo == "STRING_type":
+            tipo = self.tokens.actual.tipo;
+            self.tokens.selectNext()
+            variavel = self.orExpression()
+            arvore_copy = BinOp("DECLARATION")
+            arvore_copy.children[0] = tipo;
+            arvore_copy.children[1] = variavel
+            if self.tokens.actual.tipo == "SEMICOLON":
+                self.tokens.selectNext()
+                return arvore_copy
+            else:
+                raise ValueError("Nao tem ;")
+
+
+
+
         elif self.tokens.actual.tipo == "PRINT":
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "ABRE_PAR":
                 self.tokens.selectNext()
                 arvore = (self.orExpression())
-                # print("ARVORE: ",arvore)
                 test = Println()
                 test.children[0] = arvore
                 if (self.tokens.actual.tipo == "FECHA_PAR"):
@@ -497,8 +544,6 @@ class Parser():
                     raise ValueError("Não fechou parenteses")
                 if (self.tokens.actual.tipo == "SEMICOLON"):
                     self.tokens.selectNext()
-                    # print("------------------------------> retorno da command PRINT: ", test)
-                    # print("TIPO_pr4: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                     return test
                 else:
                     raise ValueError("Print sem ; no final")
@@ -509,15 +554,12 @@ class Parser():
             if self.tokens.actual.tipo == "ABRE_PAR":
                 self.tokens.selectNext()
                 arvore = (self.orExpression())
-                # self.tokens.selectNext()
                 if (self.tokens.actual.tipo == "FECHA_PAR"):
                     self.tokens.selectNext()
                     test = WhileOp()
                     test.children[0] = arvore
                     test.children[1] = self.Command()
-                    # self.tokens.selectNext()
                     return test
-
 
         elif self.tokens.actual.tipo == "IF":
             self.tokens.selectNext()
@@ -526,17 +568,13 @@ class Parser():
                 condicao = (self.orExpression())
                 if (self.tokens.actual.tipo == "FECHA_PAR"):
                     self.tokens.selectNext() 
-
                     to_do = self.Command()
-   
 
                     test = IfOp()
                     test.children[0] = condicao
                     test.children[1] = to_do
       
-                    # self.tokens.selectNext() #checar
                     if (self.tokens.actual.tipo == "ELSE"):
-                        # print("ELSEEEEEEEEEE")
                         self.tokens.selectNext() 
                         se_nao = self.Command()
                         test.children[2] = se_nao
@@ -544,17 +582,10 @@ class Parser():
                 else:
                     ValueError("Não fechou parenteses do if")
 
-  
-
-
         else:
-            #BLOCK
-            # print("Entrou no else da command e chama block")
             arvore = (self.Block())
             return arvore
         
-                
-
 #______________________________________________________________    
     def orExpression(self):
         arvore = self.andExpression()
@@ -642,9 +673,8 @@ class Parser():
     def term(self):
         arvore = self.factor()          
 
-    
         #int com int da erro
-        if (self.tokens.actual.tipo == "INT"):
+        if (self.tokens.actual.tipo == "NUMBER"):
             raise KeyError
         if (self.tokens.actual.tipo == "IDENTIFIER"):
             raise KeyError
@@ -672,9 +702,19 @@ class Parser():
     def factor(self):
 
         #number:
-        if (self.tokens.actual.tipo == "INT" ):
+        if (self.tokens.actual.tipo == "NUMBER" ):
             arvore = IntVal(self.tokens.actual.value)
             self.tokens.selectNext()
+
+        elif (self.tokens.actual.tipo == "IDENTIFIER" ):
+            arvore = IdentfOp(self.tokens.actual.value)
+            self.tokens.selectNext()
+
+        # elif (self.tokens.actual.tipo == "STRING_" ):
+        #     arvore = IdentfOp(self.tokens.actual.value)
+        #     self.tokens.selectNext()
+
+
         elif (self.tokens.actual.tipo == "PLUS" ): 
             arvore = UnOp(value="PLUS")
             self.tokens.selectNext()
@@ -696,10 +736,6 @@ class Parser():
                 raise KeyError
             else:
                 self.tokens.selectNext()
-
-        elif (self.tokens.actual.tipo == "IDENTIFIER" ):
-            arvore = IdentfOp(self.tokens.actual.value)
-            self.tokens.selectNext()
   
         elif self.tokens.actual.tipo == "READ":
             self.tokens.selectNext()
