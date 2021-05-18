@@ -12,7 +12,6 @@ class SymbolTable():
         pass
 
     def getter(self, variable):        
-        # vai dar problema se tentar buscar uma variavel que nao existe
         if variable in symbol_table_dict:
             #retornar o valor
             return symbol_table_dict[variable]
@@ -21,16 +20,37 @@ class SymbolTable():
 
     #por enquanto as variaveis sao unicas, nao havera problema de sobrescrita
     def setter(self, variable, value):
-        # if symbol in symbol_table_dict:           #NAO SEI SE VAI PRECISAR
-        symbol_table_dict[variable] = value;
-        # else
-        # variavel nao foi definida
+        # print("VAR: {} VALUE: {}".format(variable,value))
+        # print(symbol_table_dict)
+
+
+        if variable in symbol_table_dict:
+            tupla = symbol_table_dict[variable]
+            lst = list(tupla)
+            type = lst[1]
+
+            symbol_table_dict[variable] = (value, type)
+            # print(symbol_table_dict)
+
+        else:
+            raise ValueError("Variavel não definida")
+
+
+
+    def setterType(self, variable, type):
+        # print("VAR: {} TYPE: {}".format(variable,type))
+        symbol_table_dict[variable] = (None, type)
+
+        # print(symbol_table_dict)
+        
+        # tupla = (value, type)
+        # lst = list(tupla)
+        # lst[1] = type
+        # tupla = tuple(lst)
+
+
 
 st = SymbolTable()
-# ----------------------------------------------------------------
-# Definicao do tipo de variavel na st
-def Symbol_type(variable, type):
-    symbol_table_dict[variable] = [None, type]
 
 # ----------------------------------------------------------------
 class Node(ABC):
@@ -70,7 +90,7 @@ class Println(Node):
     def Evaluate(self):
         # print("TA ENTRANDO NO EVALUATE DO PRINT")
         left = self.children[0].Evaluate()
-        print(left)
+        print(left[0])
 # ----------------------------------------------------------------
 class Readln(Node):
     def __init__(self):
@@ -95,13 +115,16 @@ class BinOp(Node):
     def Evaluate(self):
 
         if self.value == "DECLARATION": #ARRUMAR ISSO
-            return st.setter(self.children[0], self.children[1])
+            return st.setterType(self.children[0], self.children[1])
         # retorna a operação dos seus dois filhos:
+
+
+
         right = self.children[1].Evaluate()
 
         if self.value == "ASSIGMENT":
-            return st.setter(self.children[0], right)
-
+            # print("É ASSIGMENT")
+            return st.setter(self.children[0],  right)
 
         left = self.children[0].Evaluate()
         
@@ -141,21 +164,27 @@ class UnOp(Node):
     def Evaluate(self):
         
         # if self.value == "DECLARATION":
-        #     # print("--------> ASSIGMENT")
-        #     # print("entrou aqui, left: {} right: {} ".format(self.children[0],right))
         #     return st.setter(self.children[0], right)
-        #     # return
-
+        # #setter, variavel  e valor
 
 
         # retorna o sinal do numero
         left = self.children[0].Evaluate()
+
+        if isinstance(left, int):
+            tipo = "INT";
+        elif isinstance(left, str):
+            tipo = "STRING";
+        elif isinstance(left, bool):
+            tipo = "BOOL";
+
+     
         if self.value == "PLUS":
-            return left
+            return (left, tipo) 
         if self.value == "MINUS":
-            return -left
+            return (-left, tipo)
         if self.value == "NEG": 
-            return (not left)
+            return (not left, tipo)
 
 # ----------------------------------------------------------------    
 class WhileOp(Node):
@@ -223,8 +252,16 @@ class IntVal(Node):
     def Evaluate(self):
         # retorna o próprio valor inteiro
         return self.value
+# ----------------------------------------------------------------
+# Integer value 
+class StrVal(Node):
+    def __init__(self, value=None):        
+        self.value = value
+
+    def Evaluate(self):
+        return self.value
 # ----------------------------------------------------------------       
-# Booleanvalue 
+# Boolean value 
 class BoolVal(Node):
     def __init__(self, value=None):        
         self.value = value
@@ -292,15 +329,22 @@ class Tokenizer:
             elif expression == "else":
                 token = Token("ELSE", expression)
                 self.actual = token
-            elif expression == "int":
-                token = Token("INT_type", expression)
+
+            elif expression == "int" or expression == "bool" or expression == "string":
+                token = Token("DECLARATION", expression)
                 self.actual = token
-            elif expression == "bool":
-                token = Token("BOOL_type", expression)
-                self.actual = token
-            elif expression == "string":
-                token = Token("STRING_type", expression)
-                self.actual = token
+
+            # elif expression == "int":
+            #     token = Token("DECLARATION", expression)
+            #     print("_TIPO: {}, VALOR: {}".format(self.actual.tipo, self.actual.value))
+            #     self.actual = token
+
+            # elif expression == "bool":
+            #     token = Token("BOOL_type", expression)
+            #     self.actual = token
+            # elif expression == "string":
+            #     token = Token("STRING_type", expression)
+            #     self.actual = token
 
             else:
                 token = Token("IDENTIFIER", expression)
@@ -499,11 +543,14 @@ class Parser():
             return NoOp()
 
         elif self.tokens.actual.tipo == "IDENTIFIER":
+            print("TIPO_i1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+
             variavel = (self.tokens.actual.value)
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "EQUAL":
                 self.tokens.selectNext()
                 arvore = self.orExpression()
+                print ("arvore:::::::" ,arvore)
                 arvore_copy = BinOp("ASSIGMENT")
                 arvore_copy.children[0] = variavel
                 arvore_copy.children[1] = arvore
@@ -515,18 +562,24 @@ class Parser():
                     raise ValueError("Nao tem ;")
 
 
-        elif self.tokens.actual.tipo == "STRING_type":
-            tipo = self.tokens.actual.tipo;
+        elif self.tokens.actual.tipo == "DECLARATION":
+            tipo = self.tokens.actual.value;
             self.tokens.selectNext()
-            variavel = self.orExpression()
-            arvore_copy = BinOp("DECLARATION")
-            arvore_copy.children[0] = tipo;
-            arvore_copy.children[1] = variavel
-            if self.tokens.actual.tipo == "SEMICOLON":
+            #pega o proximo e checar se é ident
+
+            if self.tokens.actual.tipo == "IDENTIFIER":
+                variavel = self.tokens.actual.value
+                arvore = BinOp("DECLARATION")
+                arvore.children[0] = variavel;
+                arvore.children[1] = tipo;
                 self.tokens.selectNext()
-                return arvore_copy
+                if self.tokens.actual.tipo == "SEMICOLON":
+                    self.tokens.selectNext()
+                    return arvore
+                else:
+                    raise ValueError("Nao tem ;")
             else:
-                raise ValueError("Nao tem ;")
+                raise ValueError ("Não é identificador")
 
 
 
@@ -710,15 +763,21 @@ class Parser():
             arvore = IdentfOp(self.tokens.actual.value)
             self.tokens.selectNext()
 
-        # elif (self.tokens.actual.tipo == "STRING_" ):
-        #     arvore = IdentfOp(self.tokens.actual.value)
-        #     self.tokens.selectNext()
+        elif (self.tokens.actual.tipo == "STRING" ):
+            arvore = StrVal(self.tokens.actual.value)
+            self.tokens.selectNext()
+        
+        elif (self.tokens.actual.tipo == "BOOL" ):
+            arvore = BoolVal(self.tokens.actual.value)
+            self.tokens.selectNext()
 
 
         elif (self.tokens.actual.tipo == "PLUS" ): 
             arvore = UnOp(value="PLUS")
             self.tokens.selectNext()
+            tipo = self.tokens.actual.tipo
             arvore.children[0] = self.factor()
+
         elif (self.tokens.actual.tipo == "MINUS" ):
             arvore = UnOp(value="MINUS")
             self.tokens.selectNext()
@@ -762,7 +821,7 @@ class Parser():
         if (self.tokens.actual.tipo != "EOF"):
             raise ValueError("Nao chegou no EOF")
 
-        # print("___________EVALUATE______________ ")
+        print("___________EVALUATE______________ ")
 
         resultado.Evaluate()
 
