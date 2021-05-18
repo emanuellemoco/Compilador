@@ -40,7 +40,7 @@ class SymbolTable():
                 # print(symbol_table_dict)
 
             elif (isinstance(value[0], int) and type == "bool"):
-                if value[0] != 0:
+                if value[0] == 0:
                     symbol_table_dict[variable] = (value[0], type)
                     # print(symbol_table_dict)
                     
@@ -148,6 +148,7 @@ class BinOp(Node):
 
         right = right[0]
         left = self.children[0].Evaluate()[0]
+        left2 = self.children[0].Evaluate()[1]
         # print("EVALUATE>>>>> ", right)
         # print("EVALUATE>>>>> ", left)
         
@@ -170,9 +171,16 @@ class BinOp(Node):
 
         #Operadores booleanos 
         elif self.value == "AND":
-            return (left and right, "bool")
+            if (left and right) >= 1:
+                return (1, "bool")
+            else:
+                return (0, "bool")
         elif self.value == "OR":
-            return (left or right, "bool")
+            if (left or right) >= 1:
+                return (1, "bool")
+            else:
+                return (0, "bool")
+
 
 
 
@@ -185,14 +193,8 @@ class UnOp(Node):
         self.children = [None] * 2
 
     def Evaluate(self):
-        
-        # if self.value == "DECLARATION":
-        #     return st.setter(self.children[0], right)
-        # #setter, variavel  e valor
-
-
-        # retorna o sinal do numero
-        left = self.children[0].Evaluate()
+    
+        left = self.children[0].Evaluate()[0]
         
         if isinstance(left, int):
             tipo = "int";
@@ -216,12 +218,12 @@ class WhileOp(Node):
         self.children = [None] * 2
 
     def Evaluate(self):
-        left = self.children[0].Evaluate()      #Condicao
+        left = self.children[0].Evaluate()[0]      #Condicao
         # right = self.children[1].Evaluate()
 
         # print("A condicao do while é: ",left)
         while (left):
-            if (self.children[0].Evaluate()):
+            if (self.children[0].Evaluate()[0]):
                 self.children[1].Evaluate() 
             else:
                 return
@@ -241,7 +243,7 @@ class IfOp(Node):
     def Evaluate(self):
         # print("0 =>", self.children[0])
 
-        left = self.children[0].Evaluate()      # Condition
+        left = self.children[0].Evaluate()[0]      # Condition
         # middle = self.children[1].Evaluate()    # Command
         # right = self.children[2].Evaluate()     #else - pode nao existir
 
@@ -253,8 +255,7 @@ class IfOp(Node):
         elif (self.children[2] != None) :
             # print("TEM ELSE")
             return self.children[2].Evaluate()  
-        
-            #checar se o filho [2] existe, se exitir chama o seu eval 
+
 
 
 #consulta o no a esquerda, que é o no de condicao
@@ -324,6 +325,8 @@ class Tokenizer:
                     raise ValueError("Chaves ou parenteses desbalanceados")
                 return
         atual = self.origin[self.position]
+
+
 
         if atual.isnumeric():
             while self.position < (len(self.origin)) and (self.origin[self.position]).isnumeric():
@@ -479,6 +482,8 @@ class Tokenizer:
                 if (self.qtdCha != 0):
                     raise KeyError     
         else: 
+            print("TIPO: {}, VALOR: {}".format(self.actual.tipo, self.actual.value))
+
             raise KeyError
 
         return    
