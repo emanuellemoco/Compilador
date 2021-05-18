@@ -472,6 +472,10 @@ class Tokenizer:
             self.position += 1
             self.selectNext()
 
+        elif atual == "\t":
+            self.position += 1
+            self.selectNext()
+
         elif atual == "{":
             token = Token("ABRE_CHA", atual)
             self.actual = token
@@ -839,8 +843,6 @@ class Parser():
 
     def run(self, code: str):
         preProce = PrePro(code)
-
-        code = re.sub(r'\s+', '', code )
 
         code = preProce.filter()
         self.tokens = Tokenizer(code)
