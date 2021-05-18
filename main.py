@@ -4,7 +4,7 @@ import ast
 from abc import ABC, abstractmethod
 import time
 import os
-
+import re
 symbol_table_dict = {}
 class SymbolTable():
     #cria um dicionario
@@ -243,12 +243,16 @@ class IfOp(Node):
     def Evaluate(self):
         # print("0 =>", self.children[0])
 
-        left = self.children[0].Evaluate()[0]      # Condition
+        left = self.children[0].Evaluate()     # Condition
         # middle = self.children[1].Evaluate()    # Command
         # right = self.children[2].Evaluate()     #else - pode nao existir
 
         #consulta 0, se for verdade da eval no filho 1
         # print("CONDICAO do if: ", left)
+        if (left[1] == "string"):
+            raise ValueError ("Não existe if de string")
+
+        left = left[0]
         if (left):
             # print("fim do if")
             return self.children[1].Evaluate()  
@@ -506,6 +510,7 @@ class PrePro():
         isComment = False
         isClosed = False
 
+
         while self.positionPP < (len(self.originPP)):    
 
             #se estiver em comenentario, checar o fim dele
@@ -524,9 +529,10 @@ class PrePro():
 
             self.positionPP +=1
 
+
         #Caso tenha aberto um comentario mas nao fechado
         if (isComment and not isClosed):
-            raise KeyError
+            raise ValueError ("Cometário não fechado")
         return filtered
        
 # ----------------------------------------------------------------
@@ -833,6 +839,9 @@ class Parser():
 
     def run(self, code: str):
         preProce = PrePro(code)
+
+        code = re.sub(r'\s+', '', code )
+
         code = preProce.filter()
         self.tokens = Tokenizer(code)
         self.tokens.selectNext()
