@@ -11,7 +11,9 @@ class SymbolTable():
     def __init__(self): 
         pass
 
-    def getter(self, variable):        
+    def getter(self, variable):
+        # print(symbol_table_dict)
+        # print("VAR: {}".format(variable)) 
         if variable in symbol_table_dict:
             #retornar o valor
             return symbol_table_dict[variable]
@@ -20,25 +22,45 @@ class SymbolTable():
 
     #por enquanto as variaveis sao unicas, nao havera problema de sobrescrita
     def setter(self, variable, value):
-        # print("VAR: {} VALUE: {}".format(variable,value))
+        # print("_setter_ VAR: {} VALUE: {}  TYPE: {}".format(variable,value[0],value[1]))
         # print(symbol_table_dict)
-
 
         if variable in symbol_table_dict:
             tupla = symbol_table_dict[variable]
             lst = list(tupla)
             type = lst[1]
+            # if type == value[1]:W
+            #     print("tipos batem")
+            # print("TIPO: ",type)
 
-            symbol_table_dict[variable] = (value, type)
-            # print(symbol_table_dict)
+            # #Checar se os valores batem com o tipo da variavel 
+            if isinstance(value[0], int) and type == "int" or isinstance(value[0], str) and type == "string":
+                 
+                symbol_table_dict[variable] = (value[0], type)
+                # print(symbol_table_dict)
+
+            elif (isinstance(value[0], int) and type == "bool"):
+                if value[0] != 0:
+                    symbol_table_dict[variable] = (value[0], type)
+                    # print(symbol_table_dict)
+                    
+                else:
+                    symbol_table_dict[variable] = (1, type)
+                    # print(symbol_table_dict)
+                
+
+
+
+            else:
+                raise ValueError("Tipos nao batem")
 
         else:
             raise ValueError("Variavel não definida")
 
-
-
     def setterType(self, variable, type):
         # print("VAR: {} TYPE: {}".format(variable,type))
+        if variable in symbol_table_dict:
+            raise ValueError("Variavel já declarada")
         symbol_table_dict[variable] = (None, type)
 
         # print(symbol_table_dict)
@@ -49,9 +71,8 @@ class SymbolTable():
         # tupla = tuple(lst)
 
 
-
+# ----------------------------------------------------------------
 st = SymbolTable()
-
 # ----------------------------------------------------------------
 class Node(ABC):
     def __init___(self, value):
@@ -101,9 +122,9 @@ class Readln(Node):
         # print("ENTROU AQUI")
         value = input()
         if value.isnumeric():
-            return int(value)
+            return (int(value), "int")
         else:
-            raise KeyError 
+            raise ValueError("Nao é int") 
 
 # ----------------------------------------------------------------
 # Binary Operation
@@ -113,43 +134,45 @@ class BinOp(Node):
         self.children = [None] * 2
 
     def Evaluate(self):
-
         if self.value == "DECLARATION": #ARRUMAR ISSO
+            # print("DECLARATION {}   {} ".format(self.children[0], self.children[1]))
             return st.setterType(self.children[0], self.children[1])
-        # retorna a operação dos seus dois filhos:
-
 
 
         right = self.children[1].Evaluate()
 
         if self.value == "ASSIGMENT":
-            # print("É ASSIGMENT")
+            # if isinstance(right, int): 
+            # print("É ASSIGMENT: {}, {} ".format(self.children[0],right))
             return st.setter(self.children[0],  right)
 
-        left = self.children[0].Evaluate()
+        right = right[0]
+        left = self.children[0].Evaluate()[0]
+        # print("EVALUATE>>>>> ", right)
+        # print("EVALUATE>>>>> ", left)
         
         if self.value == "PLUS":
-            return left + right
+            return (left + right, "int")
         elif self.value == "MINUS":
-            return left - right
+            return (left - right, "int")
         elif self.value == "TIMES":
-            return left * right
+            return (left * right, "int")
         elif self.value == "DIVIDE":
-            return (int(left / right))   
+            return (int(left / right), "int")   
 
         #Operadores relacionais 
         elif self.value == "GREATER":
-            return (int(left > right))
+            return (int(left > right), "bool")
         elif self.value == "LESS":
-            return (int(left < right))
+            return (int(left < right), "bool")
         elif self.value == "RELATIVE":
-            return (int(left == right))
+            return (int(left == right), "bool")
 
         #Operadores booleanos 
         elif self.value == "AND":
-            return (left and right)
+            return (left and right, "bool")
         elif self.value == "OR":
-            return (left or right)
+            return (left or right, "bool")
 
 
 
@@ -170,13 +193,13 @@ class UnOp(Node):
 
         # retorna o sinal do numero
         left = self.children[0].Evaluate()
-
+        
         if isinstance(left, int):
-            tipo = "INT";
+            tipo = "int";
         elif isinstance(left, str):
-            tipo = "STRING";
+            tipo = "string";
         elif isinstance(left, bool):
-            tipo = "BOOL";
+            tipo = "bool";
 
      
         if self.value == "PLUS":
@@ -242,7 +265,6 @@ class IfOp(Node):
 # caso nao, retorna.
 
 
-
 # ----------------------------------------------------------------
 # Integer value 
 class IntVal(Node):
@@ -251,15 +273,15 @@ class IntVal(Node):
 
     def Evaluate(self):
         # retorna o próprio valor inteiro
-        return self.value
+        return (self.value, "int")
 # ----------------------------------------------------------------
-# Integer value 
+# String value 
 class StrVal(Node):
     def __init__(self, value=None):        
         self.value = value
 
     def Evaluate(self):
-        return self.value
+        return (self.value, "string")
 # ----------------------------------------------------------------       
 # Boolean value 
 class BoolVal(Node):
@@ -267,10 +289,11 @@ class BoolVal(Node):
         self.value = value
 
     def Evaluate(self):
+        # print("BoolVal: {}", self.value)
         if (self.value == "true"):
-            return True #############??????
+            return (1, "bool") 
         if (self.value == "false"):
-            return False
+            return (0, "bool")
 # ----------------------------------------------------------------  
 # No Operation (Dummy)
 class NoOp(Node):
@@ -329,22 +352,16 @@ class Tokenizer:
             elif expression == "else":
                 token = Token("ELSE", expression)
                 self.actual = token
+    
+            elif expression == "true" or expression == "false":
+                token = Token("BOOL", expression)
+                self.actual = token
+
 
             elif expression == "int" or expression == "bool" or expression == "string":
                 token = Token("DECLARATION", expression)
                 self.actual = token
 
-            # elif expression == "int":
-            #     token = Token("DECLARATION", expression)
-            #     print("_TIPO: {}, VALOR: {}".format(self.actual.tipo, self.actual.value))
-            #     self.actual = token
-
-            # elif expression == "bool":
-            #     token = Token("BOOL_type", expression)
-            #     self.actual = token
-            # elif expression == "string":
-            #     token = Token("STRING_type", expression)
-            #     self.actual = token
 
             else:
                 token = Token("IDENTIFIER", expression)
@@ -543,14 +560,13 @@ class Parser():
             return NoOp()
 
         elif self.tokens.actual.tipo == "IDENTIFIER":
-            print("TIPO_i1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+            # print("TIPO_i1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
 
             variavel = (self.tokens.actual.value)
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "EQUAL":
                 self.tokens.selectNext()
                 arvore = self.orExpression()
-                print ("arvore:::::::" ,arvore)
                 arvore_copy = BinOp("ASSIGMENT")
                 arvore_copy.children[0] = variavel
                 arvore_copy.children[1] = arvore
@@ -821,7 +837,7 @@ class Parser():
         if (self.tokens.actual.tipo != "EOF"):
             raise ValueError("Nao chegou no EOF")
 
-        print("___________EVALUATE______________ ")
+        # print("___________EVALUATE______________ ")
 
         resultado.Evaluate()
 

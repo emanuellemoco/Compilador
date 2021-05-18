@@ -5,17 +5,18 @@
 
 #### Diagrama Sintático
 
-[![Diagrama](https://i.imgur.com/jzcI291.png)]()  
-[![Diagrama](https://i.imgur.com/jYCr270.png)]()
+[![Diagrama](https://i.imgur.com/iG9kJrb.jpeg)]()  
+
 
 
 #### EBNF
 
 
 BLOCK = "{", COMMAND, "}" ;   
-COMMAND = ( λ | ASSIGNMENT | PRINT | BLOCK | WHILE | IF ), ";" ;  
-ASSIGNMENT = IDENTIFIER, "=", EXPRESSION ;                                            
-PRINT = "println", "(", (EXPRESSION | NUMERO ), ")" ;                                
+COMMAND = ( (ASSIGNMENT | PRINT | DECLARATION ), ";" )  | ( λ | BLOCK | WHILE | IF ) ;  
+ASSIGNMENT = IDENTIFIER, "=", EXPRESSION ;   
+DECLARATION = ( "int" |  "bool" | "string" ),  IDENTIFIER ";" ;                                       
+PRINT = "println", "(", (EXPRESSION | NUMBER ), ")" ;                                
 WHILE = "while", "(", EXPRESSION, ")", COMMAND, BLOCK ;  
 IF = "if", "(", EXPRESSION, ")", (COMMAND | COMMAND, "else", COMMAND) ;  
 OREXPR = ANDEXPR, { "||" } ;  
@@ -24,12 +25,14 @@ EQEXPR = RELEXPR, { "==" } ;
 RELEXPR = EXPRESSION, { (">" | "<"), EXPRESSION } ;  
 EXPRESSION = TERM, { ("+" | "-"), TERM } ;  
 TERM = FACTOR, { ("*" | "/"), FACTOR } ;  
-FACTOR = (("+" | "-" | "!"), FACTOR) | NUMERO | IDENTIFIER | "(", EXPRESSION, ")" | "readln",  "(", ")" ;  
+FACTOR = (("+" | "-" | "!"), FACTOR) | NUMBER | IDENTIFIER | "(", EXPRESSION, ")" | "readln",  "(", ")" | STRING | BOOL ;  
 READLN = "readln", "(", ")" ;  
-IDENTIFIER = LETTER, { LETTER | DIGIT | "_" } ;  
-NUMERO = DIGIT, { DIGIT } ;  
-LETTER = ( a | ... | z | A | ... | Z ) ;  
-DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;  
+IDENTIFIER = LETTER, { LETTER | DIGIT | "_" } ;    
+NUMBER = DIGIT, { DIGIT } ;  
+STRING = """, "LETTER", { LETTER | DIGIT | "_" }, """;   
+BOOL = "true" | "false" ;   
+LETTER = ( a | ... | z | A | ... | Z ) ;    
+DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;    
 
 
 
@@ -40,9 +43,8 @@ DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 ) ;
 $ python3 main.py test1.c 
 ```
 
-=======
+
 Sendo 'test1.c', um arquivo .c que contém a expressão que deseja calcular.
-=======
 
 
 ###### Ex:
