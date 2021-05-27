@@ -20,48 +20,57 @@ class SymbolTable():
         else:
             raise ValueError("Variavel nao atribuída")
 
-    #por enquanto as variaveis sao unicas, nao havera problema de sobrescrita
+    def getterEBP(self, variable):
+        # print("--- ST antes: ",symbol_table_dict)
+        # print("VAR: {}".format(variable)) 
+        if variable in symbol_table_dict:
+            tupla = symbol_table_dict[variable]
+            lst = list(tupla)
+            EBP = lst[2]
+            # print("--- ST depois: ",symbol_table_dict)
+
+            
+            return EBP
+        else:
+            raise ValueError("Variavel nao atribuída")
+
+
     def setter(self, variable, value):
-        # print("_setter_ VAR: {} VALUE: {}  TYPE: {}".format(variable,value[0],value[1]))
-        # print(symbol_table_dict)
+        # print("_setter_ ",value)
 
         if variable in symbol_table_dict:
             tupla = symbol_table_dict[variable]
             lst = list(tupla)
             type = lst[1]
+            EBP = lst[2]
             # if type == value[1]:W
             #     print("tipos batem")
-            # print("TIPO: ",type)
 
             # #Checar se os valores batem com o tipo da variavel 
             if isinstance(value[0], int) and type == "int" or isinstance(value[0], str) and type == "string":
                  
-                symbol_table_dict[variable] = (value[0], type)
-                # print(symbol_table_dict)
+                symbol_table_dict[variable] = (value[0], type, EBP)
 
             elif (isinstance(value[0], int) and type == "bool"):
                 if value[0] == 0:
-                    symbol_table_dict[variable] = (value[0], type)
+                    symbol_table_dict[variable] = (value[0], type, EBP)
                     # print(symbol_table_dict)
                     
                 else:
-                    symbol_table_dict[variable] = (1, type)
+                    symbol_table_dict[variable] = (1, type, EBP)
                     # print(symbol_table_dict)
                 
-
-
-
             else:
                 raise ValueError("Tipos nao batem")
 
         else:
             raise ValueError("Variavel não definida")
 
-    def setterType(self, variable, type):
-        # print("VAR: {} TYPE: {}".format(variable,type))
+    def setterType(self, variable, type, EBP):
+        # print("VAR: {} TYPE: {} EBP: {}".format(variable,type, EBP))
         if variable in symbol_table_dict:
             raise ValueError("Variavel já declarada")
-        symbol_table_dict[variable] = (None, type)
+        symbol_table_dict[variable] = (None, type, EBP)
 
         # print(symbol_table_dict)
         
@@ -109,8 +118,9 @@ class Println(Node):
         self.children = [None] * 2
 
     def Evaluate(self):
-        # print("TA ENTRANDO NO EVALUATE DO PRINT")
         left = self.children[0].Evaluate()
+        EBP = left[2]
+        print("MOV EBX, [EBP-{}] ;".format(EBP))
         print(left[0])
 # ----------------------------------------------------------------
 class Readln(Node):
@@ -127,34 +137,54 @@ class Readln(Node):
             raise ValueError("Nao é int") 
 
 # ----------------------------------------------------------------
+
 # Binary Operation
 class BinOp(Node):
+    dword_count = 0
     def __init__(self, value=None):            
         self.value = value
         self.children = [None] * 2
 
+
     def Evaluate(self):
+        
         if self.value == "DECLARATION": #ARRUMAR ISSO
             # print("DECLARATION {}   {} ".format(self.children[0], self.children[1]))
-            return st.setterType(self.children[0], self.children[1])
-
+            print("PUSH DWORD 0 ;")
+            # print("PUSH DWORD {} ;".format(BinOp.dword_count))
+            BinOp.dword_count+=4
+            return st.setterType(self.children[0], self.children[1], BinOp.dword_count)
 
         right = self.children[1].Evaluate()
+        
+        # self.children[0]  -> Variavel 
+        # right[0]          -> Valor
+        # right[1]          -> Tipo
 
         if self.value == "ASSIGMENT":
-            # if isinstance(right, int): 
-            # print("É ASSIGMENT: {}, {} ".format(self.children[0],right))
+            print("MOV EBX, {} ;".format(right[0] ))
+            EBP = st.getterEBP(self.children[0]) #Manda a variavel e pega qual o seu EBP
+            print("MOV [EBP-{}], EBX ;".format(EBP))
             return st.setter(self.children[0],  right)
 
-        right = right[0]
-        left = self.children[0].Evaluate()[0]
-        left2 = self.children[0].Evaluate()[1]
-        # print("EVALUATE>>>>> ", right)
-        # print("EVALUATE>>>>> ", left)
+        right = right[0]                     #valor da variavel
+        left = self.children[0].Evaluate()[0]  #valor
+        left2 = self.children[0].Evaluate()[1] #tipo
+
         
         if self.value == "PLUS":
+            # print("MOV EBX, {} ;".format(left))
+            # print("PUSH EBX;".format())
+
+            # print("MOV EBX, {} ;".format(right))
+            # print("PUSH EBX;".format())
             return (left + right, "int")
         elif self.value == "MINUS":
+            print("MOV EBX, {} ;".format(left))  # nao entendi, coloco o EPB- ????
+            print("PUSH EBX ;")
+            # print("POP EAX ;")                  # isso fica aqui? acho q nao
+            # print("SUB EAX, EBX ;")  
+            # print("MOV EBX, EAX ;")  
             return (left - right, "int")
         elif self.value == "TIMES":
             return (left * right, "int")
@@ -278,6 +308,7 @@ class IntVal(Node):
 
     def Evaluate(self):
         # retorna o próprio valor inteiro
+        # print("MOV EBX, {} ;".format(self.value ))
         return (self.value, "int")
 # ----------------------------------------------------------------
 # String value 
@@ -347,8 +378,8 @@ class Tokenizer:
             if expression == "println":
                 token = Token("PRINT", expression)
                 self.actual = token
-            elif expression == "readln":
-                token = Token("READ", expression)
+            # elif expression == "readln":
+            #     token = Token("READ", expression)
                 self.actual = token
             elif expression == "while":
                 token = Token("WHILE", expression)
@@ -365,7 +396,7 @@ class Tokenizer:
                 self.actual = token
 
 
-            elif expression == "int" or expression == "bool" or expression == "string":
+            elif expression == "int" or expression == "bool": # or expression == "string":
                 token = Token("DECLARATION", expression)
                 self.actual = token
 
