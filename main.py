@@ -121,7 +121,10 @@ class Println(Node):
         left = self.children[0].Evaluate()
         EBP = left[2]
         print("MOV EBX, [EBP-{}] ;".format(EBP))
-        print(left[0])
+        print("PUSH EBX ;")
+        print("CALL print ;")
+        print("POP EBX ;")
+        # print(left[0])
 # ----------------------------------------------------------------
 class Readln(Node):
     def __init__(self):
@@ -161,34 +164,37 @@ class BinOp(Node):
 
         if self.value == "ASSIGMENT":
             right = self.children[1].Evaluate()
-            print("MOV EBX, {} ;".format(right[0] ))
+            print("MOV EBX, {} ;".format(right[0] ))  #aqui as vezes ta errado
             EBP = st.getterEBP(self.children[0]) #Manda a variavel e pega qual o seu EBP
             print("MOV [EBP-{}], EBX ;".format(EBP))
             return st.setter(self.children[0],  right)
 
 ##########################################
-        # left = self.children[0].Evaluate() 
-        # left_tipo = left[1]     #tipo
-        # left_EBP  = left[2]     #EBP
-        # left  = left[0]         #valor
+        left = self.children[0].Evaluate() 
+        left_tipo = left[1]     #tipo
+        left_EBP  = left[2]     #EBP
+        left  = left[0]         #valor
 
-        # right = self.children[1].Evaluate()
-        # right = right[0]                     #valor da variavel
+        right = self.children[1].Evaluate()
+        right = right[0]                     #valor da variavel
 ##################################################        
         if self.value == "PLUS":
+            print("MOV EBX, [EBP-{}], ;".format(left_EBP)) 
+            print("PUSH EBX ;")
+            print("MOV EBX, {} ;".format(right))
+            print("POP EAX ;")                  
+            print("ADD EAX, EBX ;")  
+            print("MOV EBX, EAX ;") 
             return (left + right, "int")
 
         elif self.value == "MINUS":
-            left = self.children[0].Evaluate() 
-            print("MOV EBX, [EBP-{}], ;".format(left[2])) 
+            print("MOV EBX, [EBP-{}], ;".format(left_EBP)) 
             print("PUSH EBX ;")
-            right = self.children[1].Evaluate()
-            print("MOV EBX, {} ;".format(right[0] ))
-
-            print("POP EAX ;")                  # isso fica aqui? acho q nao
+            print("MOV EBX, {} ;".format(right))
+            print("POP EAX ;")                  
             print("SUB EAX, EBX ;")  
             print("MOV EBX, EAX ;")  
-            return (left[0] - right[0], "int")
+            return (left - right, "int")
         elif self.value == "TIMES":
             return (left * right, "int")
         elif self.value == "DIVIDE":
