@@ -6,6 +6,7 @@ import time
 import os
 import re
 symbol_table_dict = {}
+
 class SymbolTable():
     #cria um dicionario
     def __init__(self): 
@@ -43,6 +44,13 @@ class SymbolTable():
             lst = list(tupla)
             type = lst[1]
             EBP = lst[2]
+            # print("\t tupla: ",tupla)
+            # print("\t lst: ",lst)
+            # print("\t variable: ",variable)
+            # print("\t value: ",value)
+           
+            # print("\t value[0]: ",value[0])
+
             # if type == value[1]:W
             #     print("tipos batem")
 
@@ -119,11 +127,12 @@ class Println(Node):
 
     def Evaluate(self):
         left = self.children[0].Evaluate()
-        EBP = left[2]
-        print("MOV EBX, [EBP-{}] ;".format(EBP))
-        print("PUSH EBX ;")
-        print("CALL print ;")
-        print("POP EBX ;")
+        if (len(left) == 3): print(f"MOV EBX, [EBP-{left[2]}],")
+        else: print(f"MOV EBX, {left[0]}")
+
+        print("PUSH EBX")
+        print("CALL print")
+        print("POP EBX")
         # print(left[0])
 # ----------------------------------------------------------------
 class Readln(Node):
@@ -153,10 +162,11 @@ class BinOp(Node):
         
         if self.value == "DECLARATION": #ARRUMAR ISSO
             # print("DECLARATION {}   {} ".format(self.children[0], self.children[1]))
-            print("PUSH DWORD 0 ;")
+            print("PUSH DWORD 0")
             BinOp.dword_count+=4
             return st.setterType(self.children[0], self.children[1], BinOp.dword_count)
 
+        
         
         # self.children[0]  -> Variavel 
         # right[0]          -> Valor
@@ -164,41 +174,70 @@ class BinOp(Node):
 
         if self.value == "ASSIGMENT":
             right = self.children[1].Evaluate()
-            print("MOV EBX, {} ;".format(right[0] ))  #aqui as vezes ta errado
+            print("MOV EBX, {}".format(right[0] )) #aqui as vezes ta errado
             EBP = st.getterEBP(self.children[0]) #Manda a variavel e pega qual o seu EBP
-            print("MOV [EBP-{}], EBX ;".format(EBP))
+            print("MOV [EBP-{}], EBX".format(EBP))
             return st.setter(self.children[0],  right)
+
 
 ##########################################
         left = self.children[0].Evaluate() 
-        left_tipo = left[1]     #tipo
-        left_EBP  = left[2]     #EBP
-        left  = left[0]         #valor
+        # left_tipo = left[1]     #tipo
+        # left_EBP  = left[2]     #EBP
+        # left  = left[0]         #valor
 
         right = self.children[1].Evaluate()
-        right = right[0]                     #valor da variavel
-##################################################        
+        # right = right[0]                     #valor da variavel
+################################################## 
+
+
         if self.value == "PLUS":
-            print("MOV EBX, [EBP-{}], ;".format(left_EBP)) 
-            print("PUSH EBX ;")
-            print("MOV EBX, {} ;".format(right))
-            print("POP EAX ;")                  
-            print("ADD EAX, EBX ;")  
-            print("MOV EBX, EAX ;") 
-            return (left + right, "int")
+            if (len(left) == 3): print("MOV EBX, [EBP-{}],".format(left[2]))
+            else: print("MOV EBX, {}".format(left[0]))
+                # print(f"MOV EBX, {left[0]}")
+            print("PUSH EBX")
+
+            if (len(right) == 3): print("MOV EBX, [EBP-{}],".format(right[2]))
+            else: print("MOV EBX, {}".format(right[0]))
+
+            print("POP EAX")                  
+            print("ADD EAX, EBX")  
+            print("MOV EBX, EAX") 
+            return (left[0] + right[0], "int")
 
         elif self.value == "MINUS":
-            print("MOV EBX, [EBP-{}], ;".format(left_EBP)) 
-            print("PUSH EBX ;")
-            print("MOV EBX, {} ;".format(right))
-            print("POP EAX ;")                  
-            print("SUB EAX, EBX ;")  
-            print("MOV EBX, EAX ;")  
-            return (left - right, "int")
+            if (len(left) == 3): print("MOV EBX, [EBP-{}],".format(left[2]))
+            else: print("MOV EBX, {}".format(left[0]))
+            print("PUSH EBX")
+            if (len(right) == 3): print("MOV EBX, [EBP-{}],".format(right[2]))
+            else: print("MOV EBX, {}".format(right[0]))
+            print("POP EAX")                  
+            print("SUB EAX, EBX")  
+            print("MOV EBX, EAX") 
+            return (left[0] - right[0], "int")
+
         elif self.value == "TIMES":
-            return (left * right, "int")
+            if (len(left) == 3): print("MOV EBX, [EBP-{}],".format(left[2]))
+            else: print("MOV EBX, {}".format(left[0]))
+            print("PUSH EBX")
+            if (len(right) == 3): print("MOV EBX, [EBP-{}],".format(right[2]))
+            else: print("MOV EBX, {}".format(right[0]))
+            print("POP EAX")                  
+            print("IMUL EAX")  
+            print("MOV EBX, EAX") 
+            return (left[0] * right[0], "int")
+
         elif self.value == "DIVIDE":
-            return (int(left / right), "int")   
+            if (len(left) == 3): print("MOV EBX, [EBP-{}],".format(left[2]))
+            else: print("MOV EBX, {}".format(left[0]))
+            print("PUSH EBX")
+            if (len(right) == 3): print("MOV EBX, [EBP-{}],".format(right[2]))
+            else: print("MOV EBX, {}".format(right[0]))
+
+            print("POP EAX")                  
+            print("DIV EAX")  
+            print("MOV EBX, EAX") 
+            return (int(left[0] / right[0]), "int")   
 
         #Operadores relacionais 
         elif self.value == "GREATER":
@@ -242,12 +281,18 @@ class UnOp(Node):
         elif isinstance(left, bool):
             tipo = "bool";
 
-     
+        print("PUSH EBX")
         if self.value == "PLUS":
             return (left, tipo) 
+
         if self.value == "MINUS":
+            print("MOV EAX, 0")
+            print("SUB EAX, EBX")
+            print("MOV EBX, EAX")
             return (-left, tipo)
+
         if self.value == "NEG": 
+            print("NOT EBX")
             return (not left, tipo)
 
 # ----------------------------------------------------------------    
@@ -261,7 +306,7 @@ class WhileOp(Node):
         # right = self.children[1].Evaluate()
 
         # print("A condicao do while é: ",left)
-        while (left):
+        while (left): #condicao
             if (self.children[0].Evaluate()[0]):
                 self.children[1].Evaluate() 
             else:
@@ -317,6 +362,7 @@ class IntVal(Node):
 
     def Evaluate(self):
         # retorna o próprio valor inteiro
+        print(f"MOV EBX, {self.value} ;")
         return (self.value, "int")
 # ----------------------------------------------------------------
 # String value 
@@ -878,8 +924,6 @@ class Parser():
  
         return arvore
 #______________________________________________________________
-
-
     def run(self, code: str):
         preProce = PrePro(code)
 
@@ -892,8 +936,12 @@ class Parser():
         if (self.tokens.actual.tipo != "EOF"):
             raise ValueError("Nao chegou no EOF")
 
-        # print("___________EVALUATE______________ ")
+        # with open("header.txt", "r") as header:
+        #     lines = [line.rstrip('\n') for line in header.readlines()]
+        #     for line in lines:
+        #         print (line)
 
+        # print("___________EVALUATE______________ ")
         resultado.Evaluate()
 
 
