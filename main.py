@@ -117,6 +117,8 @@ class IdentfOp(Node):
         self.value = value
 
     def Evaluate(self):
+        EBP = st.getterEBP(self.value) #Manda a variavel e pega qual o seu EBP
+        print(f"MOV EBX, [EBP-{EBP}]")
         return st.getter(self.value)
 
 # ----------------------------------------------------------------
@@ -129,10 +131,10 @@ class Println(Node):
         left = self.children[0].Evaluate()
         if (len(left) == 3): print(f"MOV EBX, [EBP-{left[2]}],")
         else: print(f"MOV EBX, {left[0]}")
-
         print("PUSH EBX")
         print("CALL print")
         print("POP EBX")
+        print("")
         # print(left[0])
 # ----------------------------------------------------------------
 class Readln(Node):
@@ -158,102 +160,107 @@ class BinOp(Node):
         self.children = [None] * 2
 
 
-    def Evaluate(self):
-        
-        if self.value == "DECLARATION": #ARRUMAR ISSO
-            # print("DECLARATION {}   {} ".format(self.children[0], self.children[1]))
-            print("PUSH DWORD 0")
-            BinOp.dword_count+=4
-            return st.setterType(self.children[0], self.children[1], BinOp.dword_count)
-
-        
-        
+    def Evaluate(self):       
         # self.children[0]  -> Variavel 
         # right[0]          -> Valor
         # right[1]          -> Tipo
 
+
         if self.value == "ASSIGMENT":
             right = self.children[1].Evaluate()
-            print("MOV EBX, {}".format(right[0] )) #aqui as vezes ta errado
+            # print("-MOV EBX, {}".format(right[0] )) #aqui as vezes ta errado
             EBP = st.getterEBP(self.children[0]) #Manda a variavel e pega qual o seu EBP
             print("MOV [EBP-{}], EBX".format(EBP))
+            print("")
             return st.setter(self.children[0],  right)
 
 
 ##########################################
-        left = self.children[0].Evaluate() 
         # left_tipo = left[1]     #tipo
         # left_EBP  = left[2]     #EBP
         # left  = left[0]         #valor
 
-        right = self.children[1].Evaluate()
+        # right = self.children[1].Evaluate()
         # right = right[0]                     #valor da variavel
 ################################################## 
 
-
-        if self.value == "PLUS":
-            if (len(left) == 3): print("MOV EBX, [EBP-{}],".format(left[2]))
-            else: print("MOV EBX, {}".format(left[0]))
-                # print(f"MOV EBX, {left[0]}")
+        if self.value == "MINUS":
+            right = self.children[0].Evaluate()
             print("PUSH EBX")
-
-            if (len(right) == 3): print("MOV EBX, [EBP-{}],".format(right[2]))
-            else: print("MOV EBX, {}".format(right[0]))
-
-            print("POP EAX")                  
-            print("ADD EAX, EBX")  
-            print("MOV EBX, EAX") 
-            return (left[0] + right[0], "int")
-
-        elif self.value == "MINUS":
-            if (len(left) == 3): print("MOV EBX, [EBP-{}],".format(left[2]))
-            else: print("MOV EBX, {}".format(left[0]))
-            print("PUSH EBX")
-            if (len(right) == 3): print("MOV EBX, [EBP-{}],".format(right[2]))
-            else: print("MOV EBX, {}".format(right[0]))
+            left = self.children[1].Evaluate() 
             print("POP EAX")                  
             print("SUB EAX, EBX")  
             print("MOV EBX, EAX") 
+            print("")
             return (left[0] - right[0], "int")
 
-        elif self.value == "TIMES":
-            if (len(left) == 3): print("MOV EBX, [EBP-{}],".format(left[2]))
-            else: print("MOV EBX, {}".format(left[0]))
+        elif self.value == "PLUS":
+            right = self.children[0].Evaluate()
             print("PUSH EBX")
-            if (len(right) == 3): print("MOV EBX, [EBP-{}],".format(right[2]))
-            else: print("MOV EBX, {}".format(right[0]))
+            left = self.children[1].Evaluate() 
+            print("POP EAX")                  
+            print("ADD EBX, EAX")  
+            print("")
+            return (left[0] + right[0], "int")
+
+
+
+        elif self.value == "TIMES":
+            right = self.children[0].Evaluate()
+            print("PUSH EBX")
+            left = self.children[1].Evaluate() 
             print("POP EAX")                  
             print("IMUL EAX")  
             print("MOV EBX, EAX") 
+            print("")
             return (left[0] * right[0], "int")
 
-        elif self.value == "DIVIDE":
-            if (len(left) == 3): print("MOV EBX, [EBP-{}],".format(left[2]))
-            else: print("MOV EBX, {}".format(left[0]))
-            print("PUSH EBX")
-            if (len(right) == 3): print("MOV EBX, [EBP-{}],".format(right[2]))
-            else: print("MOV EBX, {}".format(right[0]))
 
+        elif self.value == "DIVIDE":
+            right = self.children[0].Evaluate()
+            print("PUSH EBX")
+            left = self.children[1].Evaluate() 
             print("POP EAX")                  
             print("DIV EAX")  
             print("MOV EBX, EAX") 
             return (int(left[0] / right[0]), "int")   
 
+
+
+        right = self.children[1].Evaluate()
+        print("PUSH EBX")
+        left = self.children[0].Evaluate() 
+        print("POP EAX") 
+
         #Operadores relacionais 
-        elif self.value == "GREATER":
+        if self.value == "GREATER":
+            print("CMP EAX, EBX")
+            print("CALL binop_jg")
+            print("")
             return (int(left > right), "bool")
-        elif self.value == "LESS":
+
+
+        if self.value == "LESS":
+            print("CMP EAX, EBX")
+            print("CALL binop_jl")
+            print("")
             return (int(left < right), "bool")
+
         elif self.value == "RELATIVE":
+            print("CMP EAX, EBX")
+            print("CALL binop_je")
+            print("")
             return (int(left == right), "bool")
 
         #Operadores booleanos 
         elif self.value == "AND":
+            print("AND EAX, EBX")
             if (left and right) >= 1:
                 return (1, "bool")
             else:
                 return (0, "bool")
         elif self.value == "OR":
+            print("OR EAX, EBX")
             if (left or right) >= 1:
                 return (1, "bool")
             else:
@@ -272,8 +279,17 @@ class UnOp(Node):
 
     def Evaluate(self):
     
+
+        if self.value == "DECLARATION": #ARRUMAR ISSO
+            # print("DECLARATION {}   {} ".format(self.children[0], self.children[1]))
+            print("PUSH DWORD 0")
+            BinOp.dword_count+=4
+            return st.setterType(self.children[0], self.children[1], BinOp.dword_count)
+
         left = self.children[0].Evaluate()[0]
         
+
+
         if isinstance(left, int):
             tipo = "int";
         elif isinstance(left, str):
@@ -299,18 +315,23 @@ class UnOp(Node):
 class WhileOp(Node):
     def __init__(self, value=None):            
         self.value = value
-        self.children = [None] * 2
+        self.children = [None] * 3
 
     def Evaluate(self):
-        left = self.children[0].Evaluate()[0]      #Condicao
         # right = self.children[1].Evaluate()
-
         # print("A condicao do while é: ",left)
-        while (left): #condicao
-            if (self.children[0].Evaluate()[0]):
-                self.children[1].Evaluate() 
-            else:
-                return
+        print(f"LOOP_{self.children[2]}:")
+        left = self.children[0].Evaluate()[0]      #Condicao
+        print(f"CMP EBX, False")
+        print(f"JE EXIT_{self.children[2]}")
+        self.children[1].Evaluate() 
+        print(f"JMP LOOP_{self.children[2]}")
+        print(f"EXIT_{self.children[2]}:")
+        print(f"")
+
+        return
+
+
 
 #consulta o no a esquerda, que é o no de condicao
 #retorna 0 ou 1
@@ -322,7 +343,7 @@ class WhileOp(Node):
 class IfOp(Node):
     def __init__(self, value=None):            
         self.value = value
-        self.children = [None] * 3
+        self.children = [None] * 4
 
     def Evaluate(self):
         # print("0 =>", self.children[0])
@@ -330,20 +351,31 @@ class IfOp(Node):
         left = self.children[0].Evaluate()     # Condition
         # middle = self.children[1].Evaluate()    # Command
         # right = self.children[2].Evaluate()     #else - pode nao existir
+        # print(f"\t\tLOOP_{self.children[3]}:")
 
-        #consulta 0, se for verdade da eval no filho 1
         # print("CONDICAO do if: ", left)
+
         if (left[1] == "string"):
             raise ValueError ("Não existe if de string")
 
-        left = left[0]
-        if (left):
-            # print("fim do if")
-            return self.children[1].Evaluate()  
-        elif (self.children[2] != None) :
-            # print("TEM ELSE")
-            return self.children[2].Evaluate()  
+        print(f"CMP EBX, False")
 
+        if (self.children[2] != None):
+            print(f"JE else_{self.children[3]}")
+        else:
+            print(f"JE end_if{self.children[3]}")
+
+        ret = self.children[1].Evaluate() 
+        left = left[0]
+
+        if (self.children[2] != None) :
+            print(f"JMP end_if{self.children[3]}")
+            print(f"else_{self.children[3]}: ")
+            ret = self.children[2].Evaluate()  
+
+        print(f"enf_if_{self.children[3]}:")
+        print(f"")
+        return ret
 
 
 #consulta o no a esquerda, que é o no de condicao
@@ -362,7 +394,7 @@ class IntVal(Node):
 
     def Evaluate(self):
         # retorna o próprio valor inteiro
-        print(f"MOV EBX, {self.value} ;")
+        print(f"MOV EBX, {self.value}")
         return (self.value, "int")
 # ----------------------------------------------------------------
 # String value 
@@ -626,6 +658,7 @@ class PrePro():
        
 # ----------------------------------------------------------------
 class Parser():
+    contador_loop = 0
     def __init__(self):
         pass
 
@@ -685,7 +718,7 @@ class Parser():
 
             if self.tokens.actual.tipo == "IDENTIFIER":
                 variavel = self.tokens.actual.value
-                arvore = BinOp("DECLARATION")
+                arvore = UnOp("DECLARATION")
                 arvore.children[0] = variavel;
                 arvore.children[1] = tipo;
                 self.tokens.selectNext()
@@ -728,6 +761,8 @@ class Parser():
                     test = WhileOp()
                     test.children[0] = arvore
                     test.children[1] = self.Command()
+                    test.children[2] = Parser.contador_loop
+                    Parser.contador_loop +=1
                     return test
 
         elif self.tokens.actual.tipo == "IF":
@@ -742,6 +777,8 @@ class Parser():
                     test = IfOp()
                     test.children[0] = condicao
                     test.children[1] = to_do
+                    test.children[3] = Parser.contador_loop
+                    Parser.contador_loop +=1
       
                     if (self.tokens.actual.tipo == "ELSE"):
                         self.tokens.selectNext() 
@@ -936,14 +973,20 @@ class Parser():
         if (self.tokens.actual.tipo != "EOF"):
             raise ValueError("Nao chegou no EOF")
 
-        # with open("header.txt", "r") as header:
-        #     lines = [line.rstrip('\n') for line in header.readlines()]
-        #     for line in lines:
-        #         print (line)
+
+
+        with open("header.txt", "r") as header:
+            print(header.read())
 
         # print("___________EVALUATE______________ ")
         resultado.Evaluate()
 
+        print("""
+; interrupcao de saida
+  POP EBP
+  MOV EAX, 1
+  INT 0x80
+""")
 
 if __name__ == '__main__':
     f = open(sys.argv[1], "r")
