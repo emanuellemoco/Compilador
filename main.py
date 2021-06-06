@@ -11,7 +11,7 @@ class SymbolTable():
         self.st_dict = dict()
 
     def getter(self, variable, symbolTable):
-        print(f"getter: {variable}  DICT: {symbolTable.st_dict}")
+        # print(f"getter: {variable}  DICT: {symbolTable.st_dict}")
 
         # print(symbol_table_dict)
         # print("VAR: {}".format(variable)) 
@@ -24,17 +24,22 @@ class SymbolTable():
 
 
     def getterFunc(self, funcName):
-        print(f"getterFunc: {funcName}  DICT: {st_func_dict}")
+        # print(f"getterFunc: {funcName}  DICT: {st_func_dict}")
         if funcName in st_func_dict:
             return st_func_dict[funcName]
         else:
             raise ValueError("Funcao nao atribuída")
 
+    def setterAll(self, variable, value, tipo, symbolTable):
+        if variable in self.st_dict:
+            raise ValueError("Variavel já declarada")
+        symbolTable.st_dict[variable] = (value, tipo, None)    
+        # print("Entrei aqui: ", symbolTable.st_dict)
 
 
     def setter(self, variable, value):
         # print("_setter_ VAR: {} VALUE: {}  TYPE: {}".format(variable,value[0],value[1]))
-        # print(self.st_dict)
+        # print("DICIONARIO: ",self.st_dict)
         if variable in self.st_dict:
             tupla = self.st_dict[variable]
             lst = list(tupla)
@@ -63,14 +68,13 @@ class SymbolTable():
             raise ValueError("Variavel já declarada")
         self.st_dict[variable] = (None, type, meio)
     
-    def setterFuncType(self, variable, type, meio = None):
+    def setterFuncType(self, variable, type, meio = None, argumentos = None):
         # print("________________________ 1setterFuncType")
         # print(f"***Fazendo setter de: {variable} TYPE: {type} MEIO: {meio} dict: {st_func_dict}")
         # print(f"VAR: {variable} TYPE: {type} MEIO: {meio}")
         if variable in st_func_dict:
-            #CHECAR SE EH CHAMADA DE FUNCAO
             raise ValueError("Funcao já declarada")
-        st_func_dict[variable] = (None, type, meio)
+        st_func_dict[variable] = (None, type, meio, argumentos)
 
         # print("st_dict_d: ", st_func_dict)
         # print("________________________ 2setterFuncType")
@@ -88,6 +92,15 @@ class Node(ABC):
     def Evaluate(self, symbolTable):  
         pass
 # ----------------------------------------------------------------
+class ReturnOp():
+    def __init__(self, children):
+        self.children = children 
+
+    def Evaluate(self, symbolTable):
+        return self.children.Evaluate(symbolTable)
+
+
+# ----------------------------------------------------------------
 # Final
 class FinalOp():
     def __init__(self):
@@ -95,7 +108,10 @@ class FinalOp():
 
     def Evaluate(self, symbolTable):
         for i in self.children :
+            if type(i) == ReturnOp:
+                return i.Evaluate(symbolTable)
             i.Evaluate(symbolTable)
+            # i.Evaluate(symbolTable)
 # ----------------------------------------------------------------
 # Declaracao de funcao
 class FuncDec():
@@ -115,9 +131,12 @@ class FuncDec():
         # print("FuncDec -> st_func    : ", st_func)
         # print("FuncDec -> self    : ", self)
         # print("FuncDec -> self.children    : ", self.children)
-        
+        for child in  self.children[0]:
+            variavel = child[0]
+            typo = child[1]
+
         #adiciona o nome na ST global  (nome, self)
-        symbolTable.setterFuncType(self.name, self.tipo, self.children[1])
+        symbolTable.setterFuncType(self.name, self.tipo, self.children[1], self.children[0])
         # symbolTable.setterFuncType(self.name, self.tipo, self.children)
         
 
@@ -137,19 +156,26 @@ class FuncCall():
         self.st_func_private = SymbolTable()
 
     def Evaluate(self, symbolTable):
-        print("\tFuncCall -> funcName: , ",self.funcName)
-        print("\tFuncCall -> children: , ",self.children)
-        # print("oi ",self.children[0]) #nome da funcao 
         func = symbolTable.getterFunc(self.funcName)
-        print("\tFuncCall -> st_funcP   : ", self.st_func_private)
-        print(f"\tA saida de func: {func} ")
         
-        # for child in func[2]:
-        #     child.Evaluate(self.st_func_private)
+        # for child in self.children:
+        #     print("VALORES: ",child.Evaluate(self.st_func_private))
 
-        func[2].Evaluate(self.st_func_private)
+        if len(self.children) != len(func[3]):
+            ValueError("quantidade diferente")
+        
+        for i in range(len(self.children)):
+            valor = self.children[i].Evaluate(self.st_func_private)
+            valor = valor[0]
+            variavel = func[3]
+            tipo = variavel[0][1]
+            variavel = variavel[i][0]
+    
+            # print(f"Variavel: {variavel}  Valor: {valor}")
+            self.st_func_private.setterAll(variavel, valor, tipo, self.st_func_private ) #(varuavel e valor) e tipo 
 
-        #FAZER OS VALORES IREM CERTO, ASSOCIADOS DO QUE VEM DA FUNC COM A FUNCAO
+        final = func[2].Evaluate(self.st_func_private)
+        return final 
 
 
         # for i in self.children:
@@ -207,11 +233,16 @@ class BinOp(Node):
             # print("É ASSIGMENT: {}, {} ".format(self.children[0],right))
             return symbolTable.setter(self.children[0],  right)
 
+        right_tipo = right[1]
         right = right[0]
-        left = self.children[0].Evaluate(symbolTable)[0]
+        left = self.children[0].Evaluate(symbolTable)
+        left_tipo = left[1]
+        left = left[0]
         left2 = self.children[0].Evaluate(symbolTable)[1]
         # print("EVALUATE>>>>> ", right)
         # print("EVALUATE>>>>> ", left)
+        # print("TIPOOO ",right_tipo, left_tipo)
+
         
         if self.value == "PLUS":
             return (left + right, "int")
@@ -623,6 +654,7 @@ class Parser():
                 #VarDec e Statements
                 funcao = FuncDec(funcName, tipoFunc)
                 argumentos = FinalOp()
+                argumentos_teste = []
                 self.tokens.selectNext()
                 if (self.tokens.actual.tipo == "ABRE_PAR" ):
                     self.tokens.selectNext()
@@ -636,11 +668,13 @@ class Parser():
                                 arvore.children[0] = variavel;
                                 arvore.children[1] = tipo;
                                 argumentos.children.append(arvore) 
+                                argumentos_teste.append((variavel, tipo))
                                 self.tokens.selectNext()
                                 if (self.tokens.actual.tipo == "COLON" ):
                                     self.tokens.selectNext()
                     # print("Argumentos: ", argumentos)
-                    funcao.children[0] = argumentos
+                    # funcao.children[0] = argumentos
+                    funcao.children[0] = argumentos_teste
                     if (self.tokens.actual.tipo == "FECHA_PAR" ): #talvez nao precise de if
                         # print("TIPO_defblock1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
 
@@ -760,11 +794,10 @@ class Parser():
         elif self.tokens.actual.tipo == "RETURN":
             self.tokens.selectNext()
             arvore = self.orExpression()
-            # 
-            # FAZER AQUI
             if self.tokens.actual.tipo == "SEMICOLON":
                 self.tokens.selectNext()
-                return arvore
+                ret = ReturnOp(arvore)
+                return ret
             else:
                 raise ValueError("Nao tem ;")
 #####
@@ -968,7 +1001,7 @@ class Parser():
                     self.tokens.selectNext()
 
         elif (self.tokens.actual.tipo == "IDENTIFIER" ):
-            arvore = IdentfOp(self.tokens.actual.value)
+            arvore = IdentfOp(self.tokens.actual.value) #talvez isso seja um problema
             functionName = self.tokens.actual.value
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "ABRE_PAR":
