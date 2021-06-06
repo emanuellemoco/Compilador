@@ -4,6 +4,7 @@ import ast
 from abc import ABC, abstractmethod
 import time
 import os
+st_func_dict = {}
 class SymbolTable():
     #cria um dicionario
     def __init__(self): 
@@ -19,10 +20,18 @@ class SymbolTable():
         else:
             raise ValueError("Variavel nao atribuída")
 
+
+    def getterFunc(self, funcName):
+        if funcName in st_func_dict:
+            return st_func_dict[funcName]
+        else:
+            raise ValueError("Funcao nao atribuída")
+
+
+
     def setter(self, variable, value):
         # print("_setter_ VAR: {} VALUE: {}  TYPE: {}".format(variable,value[0],value[1]))
         # print(self.st_dict)
-
         if variable in self.st_dict:
             tupla = self.st_dict[variable]
             lst = list(tupla)
@@ -31,14 +40,11 @@ class SymbolTable():
         
             # #Checar se os valores batem com o tipo da variavel 
             if isinstance(value[0], int) and type == "int" or isinstance(value[0], str) and type == "string":
-                 
                 self.st_dict[variable] = (value[0], type, meio)
-                # print(self.st_dict)
 
             elif (isinstance(value[0], int) and type == "bool"):
                 if value[0] == 0:
                     self.st_dict[variable] = (value[0], type, meio)
-                    
                 else:
                     self.st_dict[variable] = (1, type, meio)
             else:
@@ -48,36 +54,35 @@ class SymbolTable():
             raise ValueError("Variavel não definida")
 
     def setterType(self, variable, type, meio = None):
-        print("________________________1")
         print(f"VAR: {variable} TYPE: {type} MEIO: {meio}")
-        print("st_dict_a: ", self.st_dict)
-
         if variable in self.st_dict:
+            #CHECAR SE EH CHAMADA DE FUNCAO
             raise ValueError("Variavel já declarada")
         self.st_dict[variable] = (None, type, meio)
+    
+    def setterFuncType(self, variable, type, meio = None):
+        print("________________________ 1setterFuncType")
+        print(f"***Fazendo setter de: {variable} TYPE: {type} MEIO: {meio} dict: {st_func_dict}")
+        print(f"VAR: {variable} TYPE: {type} MEIO: {meio}")
+        if variable in st_func_dict:
+            #CHECAR SE EH CHAMADA DE FUNCAO
+            raise ValueError("Funcao já declarada")
+        st_func_dict[variable] = (None, type, meio)
 
-        print("st_dict_d: ", self.st_dict)
-        print("________________________2")
-        
-        # tupla = (value, type)
-        # lst = list(tupla)
-        # lst[1] = type
-        # tupla = tuple(lst)
-
+        print("st_dict_d: ", st_func_dict)
+        print("________________________ 2setterFuncType")
 
 # ----------------------------------------------------------------
 teste_dict = {}
 st = SymbolTable()
 st_func = SymbolTable()  #st de funcoes
-
-#var_table = {} # escopo: {varname:[vartipo, varvalue]}
 # ----------------------------------------------------------------
 class Node(ABC):
     def __init___(self, value):
         super().init(value) 
     
     @abstractmethod
-    def Evaluate(self):  
+    def Evaluate(self, symbolTable):  
         pass
 # ----------------------------------------------------------------
 # Final
@@ -85,9 +90,9 @@ class FinalOp():
     def __init__(self):
         self.children = [] 
 
-    def Evaluate(self):
+    def Evaluate(self, symbolTable):
         for i in self.children :
-            i.Evaluate()
+            i.Evaluate(symbolTable)
 # ----------------------------------------------------------------
 # Declaracao de funcao
 class FuncDec():
@@ -96,15 +101,17 @@ class FuncDec():
                                     # e Statements (comandos em si da funcao)
         self.name = name
         self.tipo = tipo 
-    def Evaluate(self):
+    def Evaluate(self, symbolTable):
         #apenas cria uma variável na SymbolTable atual, sendo o 
         # nome da variável o nome da função, o valor apontando 
         # para o próprio nó FuncDec e o tipo será FUNCTION.
 
         # Cria uma ST de funcoes (nome: variavel, valor: referencia do NO)
-        print("FuncDec -> name: ", self.name)
+        print("FuncDec -> funcName: ", self.name)
+        print("FuncDec -> symbolTable: ", symbolTable)
+        print("FuncDec -> st_func    : ", st_func)
         #adiciona o nome na ST global  (nome, self)
-        st_func.setterType(self.name, self.tipo, self)
+        symbolTable.setterFuncType(self.name, self.tipo, self)
         
 
 # ----------------------------------------------------------------
@@ -117,18 +124,20 @@ class FuncCall():
 
     # m filhos (n= qauantidade de argumentos passados)
     # m + 1 se guardar o nome da funcao como filho
-    def __init__(self, funcName):
-        self.children = [] 
-        self.st_func_private = SymbolTable()
+    def __init__(self, funcName, filhos = []):
+        self.children = filhos 
         self.funcName = funcName
+        self.st_func_private = SymbolTable()
 
-    def Evaluate(self):
-        print("FuncCall -> funcName: , ",self.funcName)
+    def Evaluate(self, symbolTable):
+        print("\tFuncCall -> funcName: , ",self.funcName)
+        print("\tFuncCall -> children: , ",self.children)
         # print("oi ",self.children[0]) #nome da funcao 
-        func = st_func.getter(self.funcName)
-        print(f"FuncCall -> func: {func} ")
-        teste = func[2].Evaluate()
-        print("FuncCall -> TESTE: ", teste)
+        func = symbolTable.getterFunc(self.funcName)
+        print(f"A saida de func: {func} ")
+        print("FuncCall -> st_funcP   : ", self.st_func_private)
+        
+        func[2].Evaluate(self.st_func_private)
 
         print("FuncCall FIMMMMMMM")
 
@@ -141,8 +150,8 @@ class IdentfOp(Node):
     def __init__(self, value):
         self.value = value
 
-    def Evaluate(self):
-        return st.getter(self.value)
+    def Evaluate(self, symbolTable):
+        return st.getter(self.value, symbolTable)
 
 # ----------------------------------------------------------------
 # Le somente inteiros
@@ -150,9 +159,9 @@ class Println(Node):
     def __init__(self):
         self.children = [None] * 2
 
-    def Evaluate(self):
+    def Evaluate(self, symbolTable):
         # print("TA ENTRANDO NO EVALUATE DO PRINT")
-        left = self.children[0].Evaluate()
+        left = self.children[0].Evaluate(symbolTable)
         print(left[0])
 # ----------------------------------------------------------------
 class Readln(Node):
@@ -160,7 +169,7 @@ class Readln(Node):
         self.children = [None] * 2
 
 # eval chama o input convertendo para inteiro
-    def Evaluate(self):
+    def Evaluate(self, symbolTable):
         value = input()
         if value.isnumeric():
             return (int(value), "int")
@@ -174,13 +183,13 @@ class BinOp(Node):
         self.value = value
         self.children = [None] * 2
 
-    def Evaluate(self):
+    def Evaluate(self, symbolTable):
         if self.value == "TYPE":
             # print("DECLARATION {}   {} ".format(self.children[0], self.children[1]))
             return st.setterType(self.children[0], self.children[1])
 
 
-        right = self.children[1].Evaluate()
+        right = self.children[1].Evaluate(symbolTable)
 
         if self.value == "ASSIGMENT":
             # if isinstance(right, int): 
@@ -188,8 +197,8 @@ class BinOp(Node):
             return st.setter(self.children[0],  right)
 
         right = right[0]
-        left = self.children[0].Evaluate()[0]
-        left2 = self.children[0].Evaluate()[1]
+        left = self.children[0].Evaluate(symbolTable)[0]
+        left2 = self.children[0].Evaluate(symbolTable)[1]
         # print("EVALUATE>>>>> ", right)
         # print("EVALUATE>>>>> ", left)
         
@@ -229,9 +238,9 @@ class UnOp(Node):
         self.value = value
         self.children = [None] * 2
 
-    def Evaluate(self):
+    def Evaluate(self, symbolTable):
     
-        left = self.children[0].Evaluate()[0]
+        left = self.children[0].Evaluate(symbolTable)[0]
         
         if isinstance(left, int):
             tipo = "int";
@@ -254,14 +263,14 @@ class WhileOp(Node):
         self.value = value
         self.children = [None] * 2
 
-    def Evaluate(self):
-        left = self.children[0].Evaluate()[0]      #Condicao
+    def Evaluate(self, symbolTable):
+        left = self.children[0].Evaluate(symbolTable)[0]      #Condicao
         # right = self.children[1].Evaluate()
 
         # print("A condicao do while é: ",left)
         while (left):
-            if (self.children[0].Evaluate()[0]):
-                self.children[1].Evaluate() 
+            if (self.children[0].Evaluate(symbolTable)[0]):
+                self.children[1].Evaluate(symbolTable) 
             else:
                 return
 
@@ -277,10 +286,10 @@ class IfOp(Node):
         self.value = value
         self.children = [None] * 3
 
-    def Evaluate(self):
+    def Evaluate(self, symbolTable):
         # print("0 =>", self.children[0])
 
-        left = self.children[0].Evaluate()     # Condition
+        left = self.children[0].Evaluate(symbolTable)     # Condition
         # middle = self.children[1].Evaluate()    # Command
         # right = self.children[2].Evaluate()     #else - pode nao existir
 
@@ -292,10 +301,10 @@ class IfOp(Node):
         left = left[0]
         if (left):
             # print("fim do if")
-            return self.children[1].Evaluate()  
+            return self.children[1].Evaluate(symbolTable)  
         elif (self.children[2] != None) :
             # print("TEM ELSE")
-            return self.children[2].Evaluate()  
+            return self.children[2].Evaluate(symbolTable)  
 
 
 
@@ -313,7 +322,7 @@ class IntVal(Node):
     def __init__(self, value=None):        
         self.value = value
 
-    def Evaluate(self):
+    def Evaluate(self, symbolTable):
         # retorna o próprio valor inteiro
         return (self.value, "int")
 # ----------------------------------------------------------------
@@ -322,7 +331,7 @@ class StrVal(Node):
     def __init__(self, value=None):        
         self.value = value
 
-    def Evaluate(self):
+    def Evaluate(self,symbolTable ):
         return (self.value, "string")
 # ----------------------------------------------------------------       
 # Boolean value 
@@ -330,7 +339,7 @@ class BoolVal(Node):
     def __init__(self, value=None):        
         self.value = value
 
-    def Evaluate(self):
+    def Evaluate(self, symbolTable):
         # print("BoolVal: {}", self.value)
         if (self.value == "true"):
             return (1, "bool") 
@@ -339,7 +348,7 @@ class BoolVal(Node):
 # ----------------------------------------------------------------  
 # No Operation (Dummy)
 class NoOp(Node):
-    def Evaluate(self):
+    def Evaluate(self, symbolTable):
         pass
 # ----------------------------------------------------------------
 class Token:
@@ -627,12 +636,12 @@ class Parser():
                         self.tokens.selectNext()
                         arvore = self.Command() 
                         funcao.children[1] = arvore   
-                    print(funcao)
+                    # print(funcao)
                     
                     #call main
                     #adiciona outro children call function main
                     final_block.children.append(funcao)
-        # final_block.children.append(FuncCall("main"))
+        final_block.children.append(FuncCall("main"))
         return final_block
         
 # ----------------------------------------------------------------
@@ -672,7 +681,6 @@ class Parser():
         elif self.tokens.actual.tipo == "IDENTIFIER":
             variavel = (self.tokens.actual.value)
             self.tokens.selectNext()
-            print("TIPO_i2: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
 
             if self.tokens.actual.tipo == "EQUAL":
                 self.tokens.selectNext()
@@ -689,10 +697,9 @@ class Parser():
     
 
             elif self.tokens.actual.tipo == "ABRE_PAR":
-                print("ENTRO AQUI")
                 arvore = FuncCall(variavel)
-                # FuncCall.children.append(variavel) #primeiro filho é o nome da funcao
                 self.tokens.selectNext()
+                
                 while (self.tokens.actual.tipo != "FECHA_PAR"):
                     filho = self.orExpression()
                     if (filho != None):
@@ -748,8 +755,6 @@ class Parser():
                 return arvore
             else:
                 raise ValueError("Nao tem ;")
-
-
 #####
         elif self.tokens.actual.tipo == "WHILE":
             self.tokens.selectNext()
@@ -905,7 +910,7 @@ class Parser():
 #______________________________________________________________
     def factor(self):
         
-        print("TIPO_F1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+        # print("TIPO_F1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
 
         if (self.tokens.actual.tipo == "NUMBER" ):
             arvore = IntVal(self.tokens.actual.value)
@@ -951,23 +956,22 @@ class Parser():
                     self.tokens.selectNext()
 
         elif (self.tokens.actual.tipo == "IDENTIFIER" ):
-            print("-> entrou aqui")
+            functionName = self.tokens.actual.value
             arvore = IdentfOp(self.tokens.actual.value)
             funcName = arvore #nome da funcao
             self.tokens.selectNext()
-
             if self.tokens.actual.tipo == "ABRE_PAR":
                 self.tokens.selectNext()
-                arvore = FuncCall(funcName)
+                filhos = []
                 while (self.tokens.actual.tipo != "FECHA_PAR" ):
-                    print("TIPO_F1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-                    filho = self.orExpression
-                    arvore.children.append(filho)
-                    self.tokens.selectNext()  #######se der erro, testar sem isso
+                    filho = self.orExpression()
+                    filhos.append(filho)
+                    # arvore.children.append(filho)
                     if (self.tokens.actual.tipo == "COLON" ):
                         self.tokens.selectNext()
                 if self.tokens.actual.tipo == "FECHA_PAR":
                     self.tokens.selectNext()
+                arvore = FuncCall(functionName, filhos = filhos)
 
 
         else:
@@ -983,16 +987,17 @@ class Parser():
         code = preProce.filter()
         self.tokens = Tokenizer(code)
         self.tokens.selectNext()
-        # resultado = self.Block()
         resultado = self.FuncDefBlock()
-
-        self.tokens.selectNext() 
+        # self.tokens.selectNext() 
         # if (self.tokens.actual.tipo != "EOF"):
         #     raise ValueError("Nao chegou no EOF")
 
         # print("___________EVALUATE______________ ")
 
-        resultado.Evaluate()
+        resultado.Evaluate(st_func)
+
+        # FuncCall("main").Evaluate(st_func)
+
 
 
 if __name__ == '__main__':
