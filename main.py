@@ -663,11 +663,12 @@ class Parser():
 
         variavel = ""
         
-        print("TIPO_i1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+        # print("TIPO_i1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
         if self.tokens.actual.tipo == "SEMICOLON":
             self.tokens.selectNext()
             return NoOp()
 
+    ######### AQUI TA ERRADOOOO
         elif self.tokens.actual.tipo == "IDENTIFIER":
             variavel = (self.tokens.actual.value)
             self.tokens.selectNext()
@@ -903,8 +904,9 @@ class Parser():
 
 #______________________________________________________________
     def factor(self):
+        
+        print("TIPO_F1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
 
-        #number:
         if (self.tokens.actual.tipo == "NUMBER" ):
             arvore = IntVal(self.tokens.actual.value)
             self.tokens.selectNext()
@@ -948,26 +950,25 @@ class Parser():
                     arvore = Readln()
                     self.tokens.selectNext()
 
-#DUVIDA AQUI
         elif (self.tokens.actual.tipo == "IDENTIFIER" ):
+            print("-> entrou aqui")
             arvore = IdentfOp(self.tokens.actual.value)
-            funcIdentifier = arvore #nome da funcao
+            funcName = arvore #nome da funcao
             self.tokens.selectNext()
+
             if self.tokens.actual.tipo == "ABRE_PAR":
-                arvore = FuncCall(funcIdentifier)
-                # FuncCall.children.append(funcIdentifier) #primeiro filho é o nome da funcao
                 self.tokens.selectNext()
+                arvore = FuncCall(funcName)
                 while (self.tokens.actual.tipo != "FECHA_PAR" ):
+                    print("TIPO_F1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
                     filho = self.orExpression
                     arvore.children.append(filho)
+                    self.tokens.selectNext()  #######se der erro, testar sem isso
                     if (self.tokens.actual.tipo == "COLON" ):
                         self.tokens.selectNext()
-                
+                if self.tokens.actual.tipo == "FECHA_PAR":
+                    self.tokens.selectNext()
 
-
-        # elif (self.tokens.actual.tipo == "IDENTIFIER" ):
-        #     arvore = IdentfOp(self.tokens.actual.value)
-        #     self.tokens.selectNext()
 
         else:
             raise KeyError
