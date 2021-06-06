@@ -11,7 +11,7 @@ class SymbolTable():
         self.st_dict = dict()
 
     def getter(self, variable, symbolTable):
-        # print(f"getter: {variable}  DICT: {symbolTable.st_dict}")
+        #### print(f"getter: {variable}  DICT: {symbolTable.st_dict}")
 
         # print(symbol_table_dict)
         # print("VAR: {}".format(variable)) 
@@ -157,13 +157,15 @@ class FuncCall():
 
     def Evaluate(self, symbolTable):
         func = symbolTable.getterFunc(self.funcName)
+        func_type = func[1]
         
-        # for child in self.children:
-        #     print("VALORES: ",child.Evaluate(self.st_func_private))
+        #### print(f"func: {self.funcName} infos: {func}") 
 
-        if len(self.children) != len(func[3]):
-            ValueError("quantidade diferente")
-        
+        if (len(self.children) != len(func[3])):
+            raise ValueError(f"Função esperava {len(func[3])} argumentos mas recebeu {len(self.children)}")
+
+        #### print("Children: ", self.children)
+
         for i in range(len(self.children)):
             valor = self.children[i].Evaluate(self.st_func_private)
             valor = valor[0]
@@ -171,15 +173,15 @@ class FuncCall():
             tipo = variavel[0][1]
             variavel = variavel[i][0]
     
-            # print(f"Variavel: {variavel}  Valor: {valor}")
-            self.st_func_private.setterAll(variavel, valor, tipo, self.st_func_private ) #(varuavel e valor) e tipo 
+            self.st_func_private.setterAll(variavel, valor, tipo, self.st_func_private ) 
 
         final = func[2].Evaluate(self.st_func_private)
+
+        #checar se o tipo do return bate 
+        if (final != None):
+            if (func_type != final[1] ):
+                raise ValueError (f"Funcao do tipo {func_type} retornando {final[1]}")
         return final 
-
-
-        # for i in self.children:
-        #     i.Evaluate()
 
  # ----------------------------------------------------------------
 #faz o getter na symbol table 
@@ -188,6 +190,7 @@ class IdentfOp(Node):
         self.value = value
 
     def Evaluate(self, symbolTable):
+        #### print(f"IdentfOp valor: {self.value} st: {symbolTable}") ###
         return symbolTable.getter(self.value, symbolTable)
 
 # ----------------------------------------------------------------
@@ -672,6 +675,10 @@ class Parser():
                                 self.tokens.selectNext()
                                 if (self.tokens.actual.tipo == "COLON" ):
                                     self.tokens.selectNext()
+                                    if (self.tokens.actual.tipo != "TYPE" ):
+                                        raise ValueError ("Virgula sem novo parametro")
+                        else:
+                            raise ValueError ("Parametro sem tipo")
                     # print("Argumentos: ", argumentos)
                     # funcao.children[0] = argumentos
                     funcao.children[0] = argumentos_teste
@@ -687,6 +694,9 @@ class Parser():
                     #adiciona outro children call function main
                     final_block.children.append(funcao)
         final_block.children.append(FuncCall("main"))
+        self.tokens.selectNext() 
+        if (self.tokens.actual.tipo != "EOF"):
+            raise ValueError("Nao chegou no EOF")
         return final_block
         
 # ----------------------------------------------------------------
