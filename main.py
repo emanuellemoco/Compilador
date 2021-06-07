@@ -10,6 +10,7 @@ class SymbolTable():
     def __init__(self): 
         self.st_dict = dict()
 
+
     def getter(self, variable, symbolTable):
         # print(f"getter: {variable}  DICT: {symbolTable.st_dict}    st:{symbolTable}")
 
@@ -30,9 +31,10 @@ class SymbolTable():
             raise ValueError("Funcao nao atribuída")
 
     def setterAll(self, variable, value, tipo, symbolTable):
-        if variable in self.st_dict:
-            raise ValueError("Variavel já declarada")
-        # print(f"SetterAll variavel: {variable} valor: {value} tipo: {tipo}")
+        # print(f"SetterAll variavel: {variable} valor: {value} tipo: {tipo} table: {symbolTable}  | {symbolTable.st_dict}")
+
+        # if variable in self.st_dict:
+        #     raise ValueError("Variavel já declarada")
         symbolTable.st_dict[variable] = (value, tipo, None)    
         # print("Entrei aqui: ", symbolTable.st_dict)
 
@@ -108,9 +110,9 @@ class FinalOp():
 
     def Evaluate(self, symbolTable):
         for i in self.children :
-            if type(i) == ReturnOp:
-                return i.Evaluate(symbolTable)
-            i.Evaluate(symbolTable)
+            fim = i.Evaluate(symbolTable)
+            if type(i) == ReturnOp or fim != None:
+                return fim
             # i.Evaluate(symbolTable)
 # ----------------------------------------------------------------
 # Declaracao de funcao
@@ -153,12 +155,12 @@ class FuncCall():
     def __init__(self, funcName, filhos = []):
         self.children = filhos 
         self.funcName = funcName
-        self.st_func_private = SymbolTable()
 
     def Evaluate(self, symbolTable):
         func = symbolTable.getterFunc(self.funcName)
         func_type = func[1]
         
+        st_func_private = SymbolTable()
         # print(f"func: {self.funcName} infos: {func}") 
 
         if (len(self.children) != len(func[3])):
@@ -175,9 +177,9 @@ class FuncCall():
             if (valor_tipo != tipo):
                 raise ValueError (f"Argumento tipo {tipo} recebendo {valor_tipo}")
     
-            self.st_func_private.setterAll(variavel, valor, tipo, self.st_func_private ) 
+            st_func_private.setterAll(variavel, valor, tipo, st_func_private ) 
 
-        final = func[2].Evaluate(self.st_func_private)
+        final = func[2].Evaluate(st_func_private)
         # print(f"final: {final} e func_type: {func_type}")
 
         #checar se o tipo do return bate 
@@ -203,7 +205,6 @@ class Println(Node):
         self.children = [None] * 2
 
     def Evaluate(self, symbolTable):
-        # print("TA ENTRANDO NO EVALUATE DO PRINT")
         left = self.children[0].Evaluate(symbolTable)
         print(left[0])
 # ----------------------------------------------------------------
@@ -231,17 +232,24 @@ class BinOp(Node):
             # print("DECLARATION {}   {} ".format(self.children[0], self.children[1]))
             return symbolTable.setterType(self.children[0], self.children[1])
 
-
         right = self.children[1].Evaluate(symbolTable)
+        
+
+        # if (right == None):
+        #     print(f" right_none: {right}")
+        #     return self.children[0].Evaluate(symbolTable)
 
         if self.value == "ASSIGMENT":
             # if isinstance(right, int): 
             # print("É ASSIGMENT: {}, {} ".format(self.children[0],right))
             return symbolTable.setter(self.children[0],  right)
 
+
+        left = self.children[0].Evaluate(symbolTable)
+        # print(f" right: {right}   left: {left}")
+        # print(f"children: {self.children }")
         right_tipo = right[1]
         right = right[0]
-        left = self.children[0].Evaluate(symbolTable)
         left_tipo = left[1]
         left = left[0]
         left2 = self.children[0].Evaluate(symbolTable)[1]
@@ -353,17 +361,6 @@ class IfOp(Node):
         elif (self.children[2] != None) :
             # print("TEM ELSE")
             return self.children[2].Evaluate(symbolTable)  
-
-
-
-#consulta o no a esquerda, que é o no de condicao
-# recebe uma resposta, se for verdade
-# da eval no filho do meio [1]
-
-# se o filho 2 existir, chama o seu eval, 
-# caso nao, retorna.
-
-
 # ----------------------------------------------------------------
 # Integer value 
 class IntVal(Node):
@@ -780,7 +777,7 @@ class Parser():
                     self.tokens.selectNext()
                     return arvore
                 else:
-                    raise ValueError("Nao tem ;")
+                    raise ValueError
             else:
                 raise ValueError ("Não é identificador")
 

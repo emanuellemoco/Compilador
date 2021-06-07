@@ -1,45 +1,31 @@
+/*Ok*/
 
-int soma(int x, int y) {
-    int a;
-    int c;
-    c = 1888;
-    a = x + y + c;
-    return a;
+int soma(int x, int y)
+{
+    int res;
+    res = x + y;
+    return res;    
+}
+
+bool comparaSoma()
+{
+    bool res;
+    int x;
+    x = 3;
+    
+    res = soma(x,2) == 8;
+    
+    return res;
 }
 
 
-int main() {
-    int a;
-    int b;
-    a = 3;
-    b = soma (4, 7);
-    println(a);
-    println(b);
+int main()
+{
+    int x;
+    bool z;
+    
+    z = comparaSoma();
+    x = z;
+    println(x);
+    
 }
- /*  
-
-    b = soma(a, 4);
-
- 
- int soma (){
-    int a;
-    a = 5 ;
-    println(a);
-}
-
-
-
-int main(){
-    int a;
-    int b;
-    a = 3;
-    soma(); 
-    println(a);
-}
- */
-
-
-
- 
-
-
