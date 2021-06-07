@@ -164,17 +164,21 @@ class FuncCall():
         if (len(self.children) != len(func[3])):
             raise ValueError(f"Função esperava {len(func[3])} argumentos mas recebeu {len(self.children)}")
 
-
         for i in range(len(self.children)):
             valor = self.children[i].Evaluate(symbolTable)
+            valor_tipo = valor[1]
             valor = valor[0]
             variavel = func[3]
-            tipo = variavel[0][1]
+            tipo = variavel[i][1]
             variavel = variavel[i][0]
+            # print(f"Argumento tipo {tipo} recebendo {valor_tipo}")
+            if (valor_tipo != tipo):
+                raise ValueError (f"Argumento tipo {tipo} recebendo {valor_tipo}")
     
             self.st_func_private.setterAll(variavel, valor, tipo, self.st_func_private ) 
 
         final = func[2].Evaluate(self.st_func_private)
+        # print(f"final: {final} e func_type: {func_type}")
 
         #checar se o tipo do return bate 
         if (final != None):
