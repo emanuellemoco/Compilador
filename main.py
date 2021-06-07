@@ -11,9 +11,8 @@ class SymbolTable():
         self.st_dict = dict()
 
     def getter(self, variable, symbolTable):
-        #### print(f"getter: {variable}  DICT: {symbolTable.st_dict}")
+        # print(f"getter: {variable}  DICT: {symbolTable.st_dict}    st:{symbolTable}")
 
-        # print(symbol_table_dict)
         # print("VAR: {}".format(variable)) 
         if variable in symbolTable.st_dict:
             #retornar o valor
@@ -33,6 +32,7 @@ class SymbolTable():
     def setterAll(self, variable, value, tipo, symbolTable):
         if variable in self.st_dict:
             raise ValueError("Variavel já declarada")
+        # print(f"SetterAll variavel: {variable} valor: {value} tipo: {tipo}")
         symbolTable.st_dict[variable] = (value, tipo, None)    
         # print("Entrei aqui: ", symbolTable.st_dict)
 
@@ -159,15 +159,14 @@ class FuncCall():
         func = symbolTable.getterFunc(self.funcName)
         func_type = func[1]
         
-        #### print(f"func: {self.funcName} infos: {func}") 
+        # print(f"func: {self.funcName} infos: {func}") 
 
         if (len(self.children) != len(func[3])):
             raise ValueError(f"Função esperava {len(func[3])} argumentos mas recebeu {len(self.children)}")
 
-        #### print("Children: ", self.children)
 
         for i in range(len(self.children)):
-            valor = self.children[i].Evaluate(self.st_func_private)
+            valor = self.children[i].Evaluate(symbolTable)
             valor = valor[0]
             variavel = func[3]
             tipo = variavel[0][1]
@@ -190,7 +189,7 @@ class IdentfOp(Node):
         self.value = value
 
     def Evaluate(self, symbolTable):
-        #### print(f"IdentfOp valor: {self.value} st: {symbolTable}") ###
+        # print(f"IdentfOp valor: {self.value} st: {symbolTable}") ###
         return symbolTable.getter(self.value, symbolTable)
 
 # ----------------------------------------------------------------
@@ -733,7 +732,6 @@ class Parser():
             self.tokens.selectNext()
             return NoOp()
 
-    ######### AQUI TA ERRADOOOO
         elif self.tokens.actual.tipo == "IDENTIFIER":
             variavel = self.tokens.actual.value
             self.tokens.selectNext()
@@ -800,7 +798,6 @@ class Parser():
                 else:
                     raise ValueError("Print sem ; no final")
             
-##########
         elif self.tokens.actual.tipo == "RETURN":
             self.tokens.selectNext()
             arvore = self.orExpression()
@@ -810,7 +807,7 @@ class Parser():
                 return ret
             else:
                 raise ValueError("Nao tem ;")
-#####
+
         elif self.tokens.actual.tipo == "WHILE":
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "ABRE_PAR":
