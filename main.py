@@ -111,7 +111,7 @@ class FinalOp():
     def Evaluate(self, symbolTable):
         for i in self.children :
             fim = i.Evaluate(symbolTable)
-            if type(i) == ReturnOp or fim != None:
+            if (type(i) == ReturnOp or fim != None) and type(i) != FuncCall:
                 return fim
             # i.Evaluate(symbolTable)
 # ----------------------------------------------------------------
