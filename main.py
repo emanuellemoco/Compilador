@@ -695,7 +695,7 @@ class Parser():
         final_block.children.append(FuncCall("main"))
         self.tokens.selectNext() 
         if (self.tokens.actual.tipo != "EOF"):
-            raise ValueError("Nao chegou no EOF")
+            raise ValueError
         return final_block
         
 # ----------------------------------------------------------------
