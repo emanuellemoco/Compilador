@@ -128,9 +128,7 @@ class Println(Node):
         self.children = [None] * 2
 
     def Evaluate(self):
-        left = self.children[0].Evaluate()
-        # if (len(left) == 3): print(f"MOV EBX, [EBP-{left[2]}],")
-        # else: print(f"MOV EBX, {left[0]}")
+        self.children[0].Evaluate()
         print("PUSH EBX")
         print("CALL print")
         print("POP EBX")
@@ -321,7 +319,7 @@ class WhileOp(Node):
         # right = self.children[1].Evaluate()
         # print("A condicao do while é: ",left)
         print(f"LOOP_{self.children[2]}:")
-        left = self.children[0].Evaluate()[0]      #Condicao
+        self.children[0].Evaluate()[0]      #Condicao
         print(f"CMP EBX, False")
         print(f"JE EXIT_{self.children[2]}")
         self.children[1].Evaluate() 
@@ -358,22 +356,22 @@ class IfOp(Node):
         if (left[1] == "string"):
             raise ValueError ("Não existe if de string")
 
-        print(f"CMP EBX, False")
+        print(f"CMP EBX, True")
 
         if (self.children[2] != None):
             print(f"JE else_{self.children[3]}")
         else:
-            print(f"JE end_if{self.children[3]}")
+            print(f"JE end_if_{self.children[3]}")
 
         ret = self.children[1].Evaluate() 
         left = left[0]
 
         if (self.children[2] != None) :
-            print(f"JMP end_if{self.children[3]}")
+            print(f"JMP end_if_{self.children[3]}")
             print(f"else_{self.children[3]}: ")
             ret = self.children[2].Evaluate()  
 
-        print(f"enf_if_{self.children[3]}:")
+        print(f"end_if_{self.children[3]}:")
         print(f"")
         return ret
 
