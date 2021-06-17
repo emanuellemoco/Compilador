@@ -4,103 +4,100 @@ import ast
 from abc import ABC, abstractmethod
 import time
 import os
-st_func_dict = {}
+import re
+symbol_table_dict = {}
+
 class SymbolTable():
     #cria um dicionario
     def __init__(self): 
-        self.st_dict = dict()
+        pass
 
-
-    def getter(self, variable, symbolTable):
-        # print(f"getter: {variable}  DICT: {symbolTable.st_dict}    st:{symbolTable}")
-
+    def getter(self, variable):
+        # print(symbol_table_dict)
         # print("VAR: {}".format(variable)) 
-        if variable in symbolTable.st_dict:
+        if variable in symbol_table_dict:
             #retornar o valor
-            return symbolTable.st_dict[variable]
-            # return self.st_dict[variable][1] ###TESTAR SE EH ISSO 
+            return symbol_table_dict[variable]
+        else:
+            raise ValueError("Variavel nao atribuída")
+
+    def getterEBP(self, variable):
+        # print("--- ST antes: ",symbol_table_dict)
+        # print("VAR: {}".format(variable)) 
+        if variable in symbol_table_dict:
+            tupla = symbol_table_dict[variable]
+            lst = list(tupla)
+            EBP = lst[2]
+            # print("--- ST depois: ",symbol_table_dict)
+
+            
+            return EBP
         else:
             raise ValueError("Variavel nao atribuída")
 
 
-    def getterFunc(self, funcName):
-        # print(f"getterFunc: {funcName}  DICT: {st_func_dict}")
-        if funcName in st_func_dict:
-            return st_func_dict[funcName]
-        else:
-            raise ValueError("Funcao nao atribuída")
-
-    def setterAll(self, variable, value, tipo, symbolTable):
-        # print(f"SetterAll variavel: {variable} valor: {value} tipo: {tipo} table: {symbolTable}  | {symbolTable.st_dict}")
-
-        # if variable in self.st_dict:
-        #     raise ValueError("Variavel já declarada")
-        symbolTable.st_dict[variable] = (value, tipo, None)    
-        # print("Entrei aqui: ", symbolTable.st_dict)
-
-
     def setter(self, variable, value):
-        # print("_setter_ VAR: {} VALUE: {}  TYPE: {}".format(variable,value[0],value[1]))
-        # print("DICIONARIO: ",self.st_dict)
-        if variable in self.st_dict:
-            tupla = self.st_dict[variable]
+        # print("_setter_ ",value)
+
+        if variable in symbol_table_dict:
+            tupla = symbol_table_dict[variable]
             lst = list(tupla)
             type = lst[1]
-            meio = lst[2]
-        
+            EBP = lst[2]
+            # print("\t tupla: ",tupla)
+            # print("\t lst: ",lst)
+            # print("\t variable: ",variable)
+            # print("\t value: ",value)
+           
+            # print("\t value[0]: ",value[0])
+
+            # if type == value[1]:W
+            #     print("tipos batem")
+
             # #Checar se os valores batem com o tipo da variavel 
             if isinstance(value[0], int) and type == "int" or isinstance(value[0], str) and type == "string":
-                self.st_dict[variable] = (value[0], type, meio)
+                 
+                symbol_table_dict[variable] = (value[0], type, EBP)
 
             elif (isinstance(value[0], int) and type == "bool"):
                 if value[0] == 0:
-                    self.st_dict[variable] = (value[0], type, meio)
+                    symbol_table_dict[variable] = (value[0], type, EBP)
+                    # print(symbol_table_dict)
+                    
                 else:
-                    self.st_dict[variable] = (1, type, meio)
+                    symbol_table_dict[variable] = (1, type, EBP)
+                    # print(symbol_table_dict)
+                
             else:
                 raise ValueError("Tipos nao batem")
 
         else:
             raise ValueError("Variavel não definida")
 
-    def setterType(self, variable, type, meio = None):
-        # print(f"VAR: {variable} TYPE: {type} MEIO: {meio}")
-        if variable in self.st_dict:
-            #CHECAR SE EH CHAMADA DE FUNCAO
+    def setterType(self, variable, type, EBP):
+        # print("VAR: {} TYPE: {} EBP: {}".format(variable,type, EBP))
+        if variable in symbol_table_dict:
             raise ValueError("Variavel já declarada")
-        self.st_dict[variable] = (None, type, meio)
-    
-    def setterFuncType(self, variable, type, meio = None, argumentos = None):
-        # print("________________________ 1setterFuncType")
-        # print(f"***Fazendo setter de: {variable} TYPE: {type} MEIO: {meio} dict: {st_func_dict}")
-        # print(f"VAR: {variable} TYPE: {type} MEIO: {meio}")
-        if variable in st_func_dict:
-            raise ValueError("Funcao já declarada")
-        st_func_dict[variable] = (None, type, meio, argumentos)
+        symbol_table_dict[variable] = (None, type, EBP)
 
-        # print("st_dict_d: ", st_func_dict)
-        # print("________________________ 2setterFuncType")
+        # print(symbol_table_dict)
+        
+        # tupla = (value, type)
+        # lst = list(tupla)
+        # lst[1] = type
+        # tupla = tuple(lst)
+
 
 # ----------------------------------------------------------------
-teste_dict = {}
 st = SymbolTable()
-st_func = SymbolTable()  #st de funcoes
 # ----------------------------------------------------------------
 class Node(ABC):
     def __init___(self, value):
         super().init(value) 
     
     @abstractmethod
-    def Evaluate(self, symbolTable):  
+    def Evaluate(self):  
         pass
-# ----------------------------------------------------------------
-class ReturnOp():
-    def __init__(self, children):
-        self.children = children 
-
-    def Evaluate(self, symbolTable):
-        return self.children.Evaluate(symbolTable)
-
 
 # ----------------------------------------------------------------
 # Final
@@ -108,85 +105,10 @@ class FinalOp():
     def __init__(self):
         self.children = [] 
 
-    def Evaluate(self, symbolTable):
+    def Evaluate(self):
+        # print (len(self.children))
         for i in self.children :
-            fim = i.Evaluate(symbolTable)
-            if (type(i) == ReturnOp or fim != None) and type(i) != FuncCall:
-                return fim
-            # i.Evaluate(symbolTable)
-# ----------------------------------------------------------------
-# Declaracao de funcao
-class FuncDec():
-    def __init__(self, name, tipo):
-        self.children = [None] * 2  #VarDec(detalhe de parametros)
-                                    # e Statements (comandos em si da funcao)
-        self.name = name
-        self.tipo = tipo 
-    def Evaluate(self, symbolTable):
-        #apenas cria uma variável na SymbolTable atual, sendo o 
-        # nome da variável o nome da função, o valor apontando 
-        # para o próprio nó FuncDec e o tipo será FUNCTION.
-
-        # Cria uma ST de funcoes (nome: variavel, valor: referencia do NO)
-        # print("FuncDec -> funcName: ", self.name)
-        # print("FuncDec -> symbolTable: ", symbolTable)
-        # print("FuncDec -> st_func    : ", st_func)
-        # print("FuncDec -> self    : ", self)
-        # print("FuncDec -> self.children    : ", self.children)
-        for child in  self.children[0]:
-            variavel = child[0]
-            typo = child[1]
-
-        #adiciona o nome na ST global  (nome, self)
-        symbolTable.setterFuncType(self.name, self.tipo, self.children[1], self.children[0])
-        # symbolTable.setterFuncType(self.name, self.tipo, self.children)
-        
-
-# ----------------------------------------------------------------
-# FuncCall
-class FuncCall():
-    #executa a funcao
-    #recupera o No de declaracao que foi passado no FuncDec para a ST
-    #chama os statements e declaracoes dele
-    #passando argumentos corretos e chamando execucao dos seus filhos
-
-    # m filhos (n= qauantidade de argumentos passados)
-    # m + 1 se guardar o nome da funcao como filho
-    def __init__(self, funcName, filhos = []):
-        self.children = filhos 
-        self.funcName = funcName
-
-    def Evaluate(self, symbolTable):
-        func = symbolTable.getterFunc(self.funcName)
-        func_type = func[1]
-        
-        st_func_private = SymbolTable()
-        # print(f"func: {self.funcName} infos: {func}") 
-
-        if (len(self.children) != len(func[3])):
-            raise ValueError(f"Função esperava {len(func[3])} argumentos mas recebeu {len(self.children)}")
-
-        for i in range(len(self.children)):
-            valor = self.children[i].Evaluate(symbolTable)
-            valor_tipo = valor[1]
-            valor = valor[0]
-            variavel = func[3]
-            tipo = variavel[i][1]
-            variavel = variavel[i][0]
-            # print(f"Argumento tipo {tipo} recebendo {valor_tipo}")
-            if (valor_tipo != tipo):
-                raise ValueError (f"Argumento tipo {tipo} recebendo {valor_tipo}")
-    
-            st_func_private.setterAll(variavel, valor, tipo, st_func_private ) 
-
-        final = func[2].Evaluate(st_func_private)
-        # print(f"final: {final} e func_type: {func_type}")
-
-        #checar se o tipo do return bate 
-        if (final != None):
-            if (func_type != final[1] ):
-                raise ValueError (f"Funcao do tipo {func_type} retornando {final[1]}")
-        return final 
+            i.Evaluate()
 
  # ----------------------------------------------------------------
 #faz o getter na symbol table 
@@ -194,9 +116,10 @@ class IdentfOp(Node):
     def __init__(self, value):
         self.value = value
 
-    def Evaluate(self, symbolTable):
-        # print(f"IdentfOp valor: {self.value} st: {symbolTable}") ###
-        return symbolTable.getter(self.value, symbolTable)
+    def Evaluate(self):
+        EBP = st.getterEBP(self.value) #Manda a variavel e pega qual o seu EBP
+        print(f"MOV EBX, [EBP-{EBP}]")
+        return st.getter(self.value)
 
 # ----------------------------------------------------------------
 # Le somente inteiros
@@ -204,16 +127,23 @@ class Println(Node):
     def __init__(self):
         self.children = [None] * 2
 
-    def Evaluate(self, symbolTable):
-        left = self.children[0].Evaluate(symbolTable)
-        print(left[0])
+    def Evaluate(self):
+        left = self.children[0].Evaluate()
+        # if (len(left) == 3): print(f"MOV EBX, [EBP-{left[2]}],")
+        # else: print(f"MOV EBX, {left[0]}")
+        print("PUSH EBX")
+        print("CALL print")
+        print("POP EBX")
+        print("")
+        # print(left[0])
 # ----------------------------------------------------------------
 class Readln(Node):
     def __init__(self):
         self.children = [None] * 2
 
 # eval chama o input convertendo para inteiro
-    def Evaluate(self, symbolTable):
+    def Evaluate(self):
+        # print("ENTROU AQUI")
         value = input()
         if value.isnumeric():
             return (int(value), "int")
@@ -221,71 +151,124 @@ class Readln(Node):
             raise ValueError("Nao é int") 
 
 # ----------------------------------------------------------------
+
 # Binary Operation
 class BinOp(Node):
+    dword_count = 0
     def __init__(self, value=None):            
         self.value = value
         self.children = [None] * 2
 
-    def Evaluate(self, symbolTable):
-        if self.value == "TYPE":
-            # print("DECLARATION {}   {} ".format(self.children[0], self.children[1]))
-            return symbolTable.setterType(self.children[0], self.children[1])
 
-        right = self.children[1].Evaluate(symbolTable)
-        
+    def Evaluate(self):       
+        # self.children[0]  -> Variavel 
+        # right[0]          -> Valor
+        # right[1]          -> Tipo
 
-        # if (right == None):
-        #     print(f" right_none: {right}")
-        #     return self.children[0].Evaluate(symbolTable)
 
         if self.value == "ASSIGMENT":
-            # if isinstance(right, int): 
-            # print("É ASSIGMENT: {}, {} ".format(self.children[0],right))
-            return symbolTable.setter(self.children[0],  right)
+            right = self.children[1].Evaluate()
+            # print("-MOV EBX, {}".format(right[0] )) #aqui as vezes ta errado
+            EBP = st.getterEBP(self.children[0]) #Manda a variavel e pega qual o seu EBP
+            print("MOV [EBP-{}], EBX".format(EBP))
+            print("")
+            return st.setter(self.children[0],  right)
 
 
-        left = self.children[0].Evaluate(symbolTable)
-        # print(f" right: {right}   left: {left}")
-        # print(f"children: {self.children }")
-        right_tipo = right[1]
-        right = right[0]
-        left_tipo = left[1]
-        left = left[0]
-        left2 = self.children[0].Evaluate(symbolTable)[1]
-        # print("EVALUATE>>>>> ", right)
-        # print("EVALUATE>>>>> ", left)
-        # print("TIPOOO ",right_tipo, left_tipo)
+##########################################
+        # left_tipo = left[1]     #tipo
+        # left_EBP  = left[2]     #EBP
+        # left  = left[0]         #valor
 
-        
-        if self.value == "PLUS":
-            return (left + right, "int")
-        elif self.value == "MINUS":
-            return (left - right, "int")
+        # right = self.children[1].Evaluate()
+        # right = right[0]                     #valor da variavel
+################################################## 
+
+        if self.value == "MINUS":
+            right = self.children[0].Evaluate()
+            print("PUSH EBX")
+            left = self.children[1].Evaluate() 
+            print("POP EAX")                  
+            print("SUB EAX, EBX")  
+            print("MOV EBX, EAX") 
+            print("")
+            return (left[0] - right[0], "int")
+
+        elif self.value == "PLUS":
+            right = self.children[0].Evaluate()
+            print("PUSH EBX")
+            left = self.children[1].Evaluate() 
+            print("POP EAX")                  
+            print("ADD EBX, EAX")  
+            print("")
+            return (left[0] + right[0], "int")
+
+
+
         elif self.value == "TIMES":
-            return (left * right, "int")
+            right = self.children[0].Evaluate()
+            print("PUSH EBX")
+            left = self.children[1].Evaluate() 
+            print("POP EAX")                  
+            print("IMUL EAX")  
+            print("MOV EBX, EAX") 
+            print("")
+            return (left[0] * right[0], "int")
+
+
         elif self.value == "DIVIDE":
-            return (int(left / right), "int")   
+            right = self.children[0].Evaluate()
+            print("PUSH EBX")
+            left = self.children[1].Evaluate() 
+            print("POP EAX")                  
+            print("DIV EAX")  
+            print("MOV EBX, EAX") 
+            return (int(left[0] / right[0]), "int")   
+
+
+
+        right = self.children[1].Evaluate()
+        print("PUSH EBX")
+        left = self.children[0].Evaluate() 
+        print("POP EAX") 
 
         #Operadores relacionais 
-        elif self.value == "GREATER":
+        if self.value == "GREATER":
+            print("CMP EAX, EBX")
+            print("CALL binop_jg")
+            print("")
             return (int(left > right), "bool")
-        elif self.value == "LESS":
+
+
+        if self.value == "LESS":
+            print("CMP EAX, EBX")
+            print("CALL binop_jl")
+            print("")
             return (int(left < right), "bool")
+
         elif self.value == "RELATIVE":
+            print("CMP EAX, EBX")
+            print("CALL binop_je")
+            print("")
             return (int(left == right), "bool")
 
         #Operadores booleanos 
         elif self.value == "AND":
+            print("AND EAX, EBX")
             if (left and right) >= 1:
                 return (1, "bool")
             else:
                 return (0, "bool")
         elif self.value == "OR":
+            print("OR EAX, EBX")
             if (left or right) >= 1:
                 return (1, "bool")
             else:
                 return (0, "bool")
+
+
+
+
 
 # ----------------------------------------------------------------    
 # Unary Operation
@@ -294,10 +277,19 @@ class UnOp(Node):
         self.value = value
         self.children = [None] * 2
 
-    def Evaluate(self, symbolTable):
+    def Evaluate(self):
     
-        left = self.children[0].Evaluate(symbolTable)[0]
+
+        if self.value == "DECLARATION": #ARRUMAR ISSO
+            # print("DECLARATION {}   {} ".format(self.children[0], self.children[1]))
+            print("PUSH DWORD 0")
+            BinOp.dword_count+=4
+            return st.setterType(self.children[0], self.children[1], BinOp.dword_count)
+
+        left = self.children[0].Evaluate()[0]
         
+
+
         if isinstance(left, int):
             tipo = "int";
         elif isinstance(left, str):
@@ -305,30 +297,41 @@ class UnOp(Node):
         elif isinstance(left, bool):
             tipo = "bool";
 
-     
+        print("PUSH EBX")
         if self.value == "PLUS":
             return (left, tipo) 
+
         if self.value == "MINUS":
+            print("MOV EAX, 0")
+            print("SUB EAX, EBX")
+            print("MOV EBX, EAX")
             return (-left, tipo)
+
         if self.value == "NEG": 
+            print("NOT EBX")
             return (not left, tipo)
 
 # ----------------------------------------------------------------    
 class WhileOp(Node):
     def __init__(self, value=None):            
         self.value = value
-        self.children = [None] * 2
+        self.children = [None] * 3
 
-    def Evaluate(self, symbolTable):
-        left = self.children[0].Evaluate(symbolTable)[0]      #Condicao
+    def Evaluate(self):
         # right = self.children[1].Evaluate()
-
         # print("A condicao do while é: ",left)
-        while (left):
-            if (self.children[0].Evaluate(symbolTable)[0]):
-                self.children[1].Evaluate(symbolTable) 
-            else:
-                return
+        print(f"LOOP_{self.children[2]}:")
+        left = self.children[0].Evaluate()[0]      #Condicao
+        print(f"CMP EBX, False")
+        print(f"JE EXIT_{self.children[2]}")
+        self.children[1].Evaluate() 
+        print(f"JMP LOOP_{self.children[2]}")
+        print(f"EXIT_{self.children[2]}:")
+        print(f"")
+
+        return
+
+
 
 #consulta o no a esquerda, que é o no de condicao
 #retorna 0 ou 1
@@ -340,35 +343,58 @@ class WhileOp(Node):
 class IfOp(Node):
     def __init__(self, value=None):            
         self.value = value
-        self.children = [None] * 3
+        self.children = [None] * 4
 
-    def Evaluate(self, symbolTable):
+    def Evaluate(self):
         # print("0 =>", self.children[0])
 
-        left = self.children[0].Evaluate(symbolTable)     # Condition
+        left = self.children[0].Evaluate()     # Condition
         # middle = self.children[1].Evaluate()    # Command
         # right = self.children[2].Evaluate()     #else - pode nao existir
+        # print(f"\t\tLOOP_{self.children[3]}:")
 
-        #consulta 0, se for verdade da eval no filho 1
         # print("CONDICAO do if: ", left)
+
         if (left[1] == "string"):
             raise ValueError ("Não existe if de string")
 
+        print(f"CMP EBX, False")
+
+        if (self.children[2] != None):
+            print(f"JE else_{self.children[3]}")
+        else:
+            print(f"JE end_if{self.children[3]}")
+
+        ret = self.children[1].Evaluate() 
         left = left[0]
-        if (left):
-            # print("fim do if")
-            return self.children[1].Evaluate(symbolTable)  
-        elif (self.children[2] != None) :
-            # print("TEM ELSE")
-            return self.children[2].Evaluate(symbolTable)  
+
+        if (self.children[2] != None) :
+            print(f"JMP end_if{self.children[3]}")
+            print(f"else_{self.children[3]}: ")
+            ret = self.children[2].Evaluate()  
+
+        print(f"enf_if_{self.children[3]}:")
+        print(f"")
+        return ret
+
+
+#consulta o no a esquerda, que é o no de condicao
+# recebe uma resposta, se for verdade
+# da eval no filho do meio [1]
+
+# se o filho 2 existir, chama o seu eval, 
+# caso nao, retorna.
+
+
 # ----------------------------------------------------------------
 # Integer value 
 class IntVal(Node):
     def __init__(self, value=None):        
         self.value = value
 
-    def Evaluate(self, symbolTable):
+    def Evaluate(self):
         # retorna o próprio valor inteiro
+        print(f"MOV EBX, {self.value}")
         return (self.value, "int")
 # ----------------------------------------------------------------
 # String value 
@@ -376,7 +402,7 @@ class StrVal(Node):
     def __init__(self, value=None):        
         self.value = value
 
-    def Evaluate(self,symbolTable ):
+    def Evaluate(self):
         return (self.value, "string")
 # ----------------------------------------------------------------       
 # Boolean value 
@@ -384,7 +410,7 @@ class BoolVal(Node):
     def __init__(self, value=None):        
         self.value = value
 
-    def Evaluate(self, symbolTable):
+    def Evaluate(self):
         # print("BoolVal: {}", self.value)
         if (self.value == "true"):
             return (1, "bool") 
@@ -393,7 +419,7 @@ class BoolVal(Node):
 # ----------------------------------------------------------------  
 # No Operation (Dummy)
 class NoOp(Node):
-    def Evaluate(self, symbolTable):
+    def Evaluate(self):
         pass
 # ----------------------------------------------------------------
 class Token:
@@ -438,8 +464,8 @@ class Tokenizer:
             if expression == "println":
                 token = Token("PRINT", expression)
                 self.actual = token
-            elif expression == "readln":
-                token = Token("READ", expression)
+            # elif expression == "readln":
+            #     token = Token("READ", expression)
                 self.actual = token
             elif expression == "while":
                 token = Token("WHILE", expression)
@@ -450,17 +476,14 @@ class Tokenizer:
             elif expression == "else":
                 token = Token("ELSE", expression)
                 self.actual = token
-            elif expression == "return":
-                token = Token("RETURN", expression)
-                self.actual = token
     
             elif expression == "true" or expression == "false":
                 token = Token("BOOL", expression)
                 self.actual = token
 
 
-            elif expression == "int" or expression == "bool" or expression == "string":
-                token = Token("TYPE", expression)
+            elif expression == "int" or expression == "bool": # or expression == "string":
+                token = Token("DECLARATION", expression)
                 self.actual = token
 
 
@@ -495,11 +518,6 @@ class Tokenizer:
         
         elif atual == ";":
             token = Token("SEMICOLON", atual) 
-            self.actual = token
-            self.position += 1
-
-        elif atual == ",":
-            token = Token("COLON", atual) 
             self.actual = token
             self.position += 1
 
@@ -640,101 +658,44 @@ class PrePro():
        
 # ----------------------------------------------------------------
 class Parser():
+    contador_loop = 0
     def __init__(self):
         pass
-# ----------------------------------------------------------------
-    def FuncDefBlock(self):
 
-        # print("TIPO_defblock1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-        final_block = FinalOp()
-        while (self.tokens.actual.tipo == "TYPE" ):
-            tipoFunc = self.tokens.actual.value
-            self.tokens.selectNext()  
-
-            if (self.tokens.actual.tipo == "IDENTIFIER" ):
-                funcName = self.tokens.actual.value
-                ## aqui eu chamo a FuncDec
-                #VarDec e Statements
-                funcao = FuncDec(funcName, tipoFunc)
-                argumentos = FinalOp()
-                argumentos_teste = []
-                self.tokens.selectNext()
-                if (self.tokens.actual.tipo == "ABRE_PAR" ):
-                    self.tokens.selectNext()
-                    while (self.tokens.actual.tipo != "FECHA_PAR" ):
-                        if (self.tokens.actual.tipo == "TYPE" ):
-                            tipo = self.tokens.actual.value
-                            self.tokens.selectNext()  
-                            if (self.tokens.actual.tipo == "IDENTIFIER" ):
-                                variavel = self.tokens.actual.value
-                                arvore = BinOp("TYPE")
-                                arvore.children[0] = variavel;
-                                arvore.children[1] = tipo;
-                                argumentos.children.append(arvore) 
-                                argumentos_teste.append((variavel, tipo))
-                                self.tokens.selectNext()
-                                if (self.tokens.actual.tipo == "COLON" ):
-                                    self.tokens.selectNext()
-                                    if (self.tokens.actual.tipo != "TYPE" ):
-                                        raise ValueError ("Virgula sem novo parametro")
-                        else:
-                            raise ValueError ("Parametro sem tipo")
-                    # print("Argumentos: ", argumentos)
-                    # funcao.children[0] = argumentos
-                    funcao.children[0] = argumentos_teste
-                    if (self.tokens.actual.tipo == "FECHA_PAR" ): #talvez nao precise de if
-                        # print("TIPO_defblock1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-
-                        self.tokens.selectNext()
-                        arvore = self.Command() 
-                        funcao.children[1] = arvore   
-                    # print(funcao)
-                    
-                    #call main
-                    #adiciona outro children call function main
-                    final_block.children.append(funcao)
-        final_block.children.append(FuncCall("main"))
-        self.tokens.selectNext() 
-        if (self.tokens.actual.tipo != "EOF"):
-            raise ValueError
-        return final_block
-        
 # ----------------------------------------------------------------
     # chama command 
     def Block(self):
-        # print("TIPO_blcok1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-
-
         final = FinalOp()
 
         if (self.tokens.actual.tipo == "ABRE_CHA" ):
             self.tokens.selectNext()  
-
-            while(self.tokens.actual.tipo != "FECHA_CHA" ):
+            while(self.tokens.actual.tipo != "FECHA_CHA" and self.tokens.actual.tipo != "EOF"):
                 filho = self.Command()
                 if (filho != None):
                     final.children.append(filho)
             if (self.tokens.actual.tipo == "FECHA_CHA"):
                 self.tokens.selectNext() 
+    
             return final
         else:
-            print("ERRO_block: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+            print("TIPO_block: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
             raise ValueError("Erro na block")
         
         
 
 # ----------------------------------------------------------------
     def Command(self):
-
         variavel = ""
         
-        # print("TIPO_i1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+  
         if self.tokens.actual.tipo == "SEMICOLON":
             self.tokens.selectNext()
             return NoOp()
 
         elif self.tokens.actual.tipo == "IDENTIFIER":
-            variavel = self.tokens.actual.value
+            # print("TIPO_i1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
+
+            variavel = (self.tokens.actual.value)
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "EQUAL":
                 self.tokens.selectNext()
@@ -748,28 +709,16 @@ class Parser():
                     return arvore_copy
                 else:
                     raise ValueError("Nao tem ;")
-    
 
-            elif self.tokens.actual.tipo == "ABRE_PAR":
-                self.tokens.selectNext()
-                filhos = []
-                while (self.tokens.actual.tipo != "FECHA_PAR"):
-                    filho = self.orExpression()
-                    filhos.append(filho)
-                    if (self.tokens.actual.tipo == "COLON" ):
-                        self.tokens.selectNext()
-                if self.tokens.actual.tipo == "FECHA_PAR":
-                    self.tokens.selectNext()
-                arvore = FuncCall(variavel, filhos)
-                return arvore
 
-        elif self.tokens.actual.tipo == "TYPE":
+        elif self.tokens.actual.tipo == "DECLARATION":
             tipo = self.tokens.actual.value;
             self.tokens.selectNext()
             #pega o proximo e checar se é ident
+
             if self.tokens.actual.tipo == "IDENTIFIER":
                 variavel = self.tokens.actual.value
-                arvore = BinOp("TYPE")
+                arvore = UnOp("DECLARATION")
                 arvore.children[0] = variavel;
                 arvore.children[1] = tipo;
                 self.tokens.selectNext()
@@ -777,16 +726,18 @@ class Parser():
                     self.tokens.selectNext()
                     return arvore
                 else:
-                    raise ValueError
+                    raise ValueError("Nao tem ;")
             else:
                 raise ValueError ("Não é identificador")
+
+
 
 
         elif self.tokens.actual.tipo == "PRINT":
             self.tokens.selectNext()
             if self.tokens.actual.tipo == "ABRE_PAR":
                 self.tokens.selectNext()
-                arvore = self.orExpression()
+                arvore = (self.orExpression())
                 test = Println()
                 test.children[0] = arvore
                 if (self.tokens.actual.tipo == "FECHA_PAR"):
@@ -799,15 +750,6 @@ class Parser():
                 else:
                     raise ValueError("Print sem ; no final")
             
-        elif self.tokens.actual.tipo == "RETURN":
-            self.tokens.selectNext()
-            arvore = self.orExpression()
-            if self.tokens.actual.tipo == "SEMICOLON":
-                self.tokens.selectNext()
-                ret = ReturnOp(arvore)
-                return ret
-            else:
-                raise ValueError("Nao tem ;")
 
         elif self.tokens.actual.tipo == "WHILE":
             self.tokens.selectNext()
@@ -819,6 +761,8 @@ class Parser():
                     test = WhileOp()
                     test.children[0] = arvore
                     test.children[1] = self.Command()
+                    test.children[2] = Parser.contador_loop
+                    Parser.contador_loop +=1
                     return test
 
         elif self.tokens.actual.tipo == "IF":
@@ -833,6 +777,8 @@ class Parser():
                     test = IfOp()
                     test.children[0] = condicao
                     test.children[1] = to_do
+                    test.children[3] = Parser.contador_loop
+                    Parser.contador_loop +=1
       
                     if (self.tokens.actual.tipo == "ELSE"):
                         self.tokens.selectNext() 
@@ -848,8 +794,6 @@ class Parser():
         
 #______________________________________________________________    
     def orExpression(self):
-        # print("TIPO__: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
-
         arvore = self.andExpression()
         while(self.tokens.actual.tipo == "OR"):
             self.tokens.selectNext()               
@@ -962,24 +906,29 @@ class Parser():
 
 #______________________________________________________________
     def factor(self):
-        
-        # print("TIPO_F1: {}, VALOR: {}".format(self.tokens.actual.tipo, self.tokens.actual.value))
 
+        #number:
         if (self.tokens.actual.tipo == "NUMBER" ):
             arvore = IntVal(self.tokens.actual.value)
+            self.tokens.selectNext()
+
+        elif (self.tokens.actual.tipo == "IDENTIFIER" ):
+            arvore = IdentfOp(self.tokens.actual.value)
             self.tokens.selectNext()
 
         elif (self.tokens.actual.tipo == "STRING" ):
             arvore = StrVal(self.tokens.actual.value)
             self.tokens.selectNext()
-
+        
         elif (self.tokens.actual.tipo == "BOOL" ):
             arvore = BoolVal(self.tokens.actual.value)
             self.tokens.selectNext()
-        
+
+
         elif (self.tokens.actual.tipo == "PLUS" ): 
             arvore = UnOp(value="PLUS")
             self.tokens.selectNext()
+            tipo = self.tokens.actual.tipo
             arvore.children[0] = self.factor()
 
         elif (self.tokens.actual.tipo == "MINUS" ):
@@ -1007,49 +956,37 @@ class Parser():
                 if self.tokens.actual.tipo == "FECHA_PAR":
                     arvore = Readln()
                     self.tokens.selectNext()
-
-        elif (self.tokens.actual.tipo == "IDENTIFIER" ):
-            arvore = IdentfOp(self.tokens.actual.value) #talvez isso seja um problema
-            functionName = self.tokens.actual.value
-            self.tokens.selectNext()
-            if self.tokens.actual.tipo == "ABRE_PAR":
-                self.tokens.selectNext()
-                filhos = []
-                while (self.tokens.actual.tipo != "FECHA_PAR" ):
-                    filho = self.orExpression()
-                    filhos.append(filho)
-                    if (self.tokens.actual.tipo == "COLON" ):
-                        self.tokens.selectNext()
-                if self.tokens.actual.tipo == "FECHA_PAR":
-                    self.tokens.selectNext()
-                arvore = FuncCall(functionName, filhos)
-
-
         else:
             raise KeyError
  
         return arvore
 #______________________________________________________________
-
-
     def run(self, code: str):
         preProce = PrePro(code)
 
         code = preProce.filter()
         self.tokens = Tokenizer(code)
         self.tokens.selectNext()
-        resultado = self.FuncDefBlock()
-        # self.tokens.selectNext() 
-        # if (self.tokens.actual.tipo != "EOF"):
-        #     raise ValueError("Nao chegou no EOF")
+        resultado = self.Block()
+
+        self.tokens.selectNext() 
+        if (self.tokens.actual.tipo != "EOF"):
+            raise ValueError("Nao chegou no EOF")
+
+
+
+        with open("header.txt", "r") as header:
+            print(header.read())
 
         # print("___________EVALUATE______________ ")
+        resultado.Evaluate()
 
-        resultado.Evaluate(st_func)
-
-        # FuncCall("main").Evaluate(st_func)
-
-
+        print("""
+; interrupcao de saida
+  POP EBP
+  MOV EAX, 1
+  INT 0x80
+""")
 
 if __name__ == '__main__':
     f = open(sys.argv[1], "r")
