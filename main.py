@@ -232,33 +232,34 @@ class BinOp(Node):
 
         #Operadores relacionais 
         if self.value == "GREATER":
-            print("CMP EAX, EBX")
+            # print("CMP EAX, EBX")
+            print("CMP EBX, EAX")
             print("CALL binop_jg")
             print("")
             return (int(left > right), "bool")
 
 
         if self.value == "LESS":
-            print("CMP EAX, EBX")
+            print("CMP EBX, EAX")
             print("CALL binop_jl")
             print("")
             return (int(left < right), "bool")
 
         elif self.value == "RELATIVE":
-            print("CMP EAX, EBX")
+            print("CMP EBX, EAX")
             print("CALL binop_je")
             print("")
             return (int(left == right), "bool")
 
         #Operadores booleanos 
         elif self.value == "AND":
-            print("AND EAX, EBX")
+            print("AND EBX, EAX")
             if (left and right) >= 1:
                 return (1, "bool")
             else:
                 return (0, "bool")
         elif self.value == "OR":
-            print("OR EAX, EBX")
+            print("OR EBX, EAX")
             if (left or right) >= 1:
                 return (1, "bool")
             else:
@@ -356,7 +357,7 @@ class IfOp(Node):
         if (left[1] == "string"):
             raise ValueError ("Não existe if de string")
 
-        print(f"CMP EBX, True")
+        print(f"CMP EBX, False")
 
         if (self.children[2] != None):
             print(f"JE else_{self.children[3]}")
